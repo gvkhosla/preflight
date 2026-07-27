@@ -1,0 +1,53 @@
+{
+  "name": "preflight",
+  "version": "0.1.0",
+  "description": "Local ship gate for agent-built software: multi-judge findings, grounded diffs, executable verdict.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Geet Khosla",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gvkhosla/preflight.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gvkhosla/preflight/issues"
+  },
+  "homepage": "https://github.com/gvkhosla/preflight#readme",
+  "keywords": [
+    "preflight",
+    "code-review",
+    "coding-agents",
+    "git-diff",
+    "llm-judge",
+    "cli"
+  ],
+  "bin": {
+    "preflight": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "esbuild src/cli.ts --bundle --packages=external --platform=node --format=esm --outfile=dist/cli.js",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit",
+    "dev": "bun src/cli.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.74.0",
+    "shiki": "^3.13.0",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.0",
+    "esbuild": "^0.28.1",
+    "typescript": "^5.9.0"
+  }
+}
