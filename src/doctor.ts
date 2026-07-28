@@ -1,4 +1,4 @@
-import { BACKENDS } from "./backends";
+import { BACKEND_ORDER, BACKENDS, listAvailableBackends, listAvailableCliBackends } from "./backends";
 import { run } from "./proc";
 import { VERSION } from "./version";
 
@@ -16,7 +16,6 @@ export async function runDoctor(): Promise<number> {
   lines.push(`preflight doctor v${VERSION}`);
   lines.push("");
 
-  // Runtime
   lines.push("Runtime");
   ok(`node ${process.version}`);
   const git = await run(["git", "--version"]);
@@ -31,40 +30,62 @@ export async function runDoctor(): Promise<number> {
     info("git repo", "not inside a work tree (piped diffs still work)");
   }
 
-  // Backends
   lines.push("");
-  lines.push("LLM backends");
-  let anyBackend = false;
-  for (const b of Object.values(BACKENDS)) {
+  lines.push("Agent CLIs (preferred)");
+  let anyCli = false;
+  for (const name of BACKEND_ORDER) {
+    const b = BACKENDS[name];
+    if (b.kind !== "cli") continue;
     const avail = await b.available();
     if (avail) {
-      anyBackend = true;
-      ok(b.name);
+      anyCli = true;
+      ok(name);
     } else {
-      bad(b.name, "not available");
+      bad(name, "not on PATH");
     }
+  }
+
+  lines.push("");
+  lines.push("API backends (optional)");
+  for (const name of BACKEND_ORDER) {
+    const b = BACKENDS[name];
+    if (b.kind !== "api") continue;
+    const avail = await b.available();
+    if (avail) ok(name);
+    else bad(name, "not configured");
   }
   if (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) {
     ok("ANTHROPIC_API_KEY/AUTH_TOKEN set");
   } else {
-    info("ANTHROPIC_API_KEY", "not set (optional if a CLI backend works)");
+    info("ANTHROPIC_API_KEY", "optional power-up if no agent CLI is installed");
   }
   if (process.env.PREFLIGHT_MODEL) info("PREFLIGHT_MODEL", process.env.PREFLIGHT_MODEL);
-  else info("PREFLIGHT_MODEL", "default claude-opus-4-5 (anthropic backend)");
 
-  // Optional memory
+  const available = await listAvailableBackends();
+  const clis = await listAvailableCliBackends();
+  if (available[0]) {
+    info("default backend", `${available[0].name}${available[0].kind === "cli" ? " (cli)" : " (api)"}`);
+  }
+  if (clis.length >= 2) info("auto-strict", `would use ${clis[0].name}+${clis[1].name}`);
+  else if (available.length >= 2) info("auto-strict", `would use ${available[0].name}+${available[1].name}`);
+
   lines.push("");
   lines.push("Optional");
   if (await have("pickbrain")) ok("pickbrain", "local memory available");
   else info("pickbrain", "not on PATH (optional precedent memory)");
-
   if (process.env.PREFLIGHT_NO_RECALL === "1") info("PREFLIGHT_NO_RECALL", "memory disabled");
 
   lines.push("");
-  if (!anyBackend) {
-    lines.push("Status: NOT READY — install claude/codex/gemini/pi or set ANTHROPIC_API_KEY");
+  if (!anyCli && available.length === 0) {
+    lines.push("Status: NOT READY — install pi, claude, codex, amp, opencode, or gemini");
+    lines.push("         (or set ANTHROPIC_API_KEY as an optional API backend)");
     console.log(lines.join("\n"));
     return 1;
+  }
+  if (!anyCli && available.length > 0) {
+    lines.push("Status: READY via API — consider installing an agent CLI for the default path");
+    console.log(lines.join("\n"));
+    return 0;
   }
   if (git.code !== 0) {
     lines.push("Status: DEGRADED — git missing; only piped diffs will work");

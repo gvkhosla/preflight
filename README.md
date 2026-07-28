@@ -30,7 +30,8 @@ Exit codes: **`0` approved** · **`2` changes requested** · **`1` error**
    npm install -g @khosla/preflight
    npx @khosla/preflight doctor
    ```
-2. **Backend** — set `ANTHROPIC_API_KEY` **or** have `claude` / `codex` / `gemini` / `pi` on PATH
+2. **Backend** — have an agent CLI on PATH (`pi`, `claude`, `codex`, `amp`, `opencode`, or `gemini`).
+   Optional power-up: `ANTHROPIC_API_KEY` if you prefer the Anthropic API.
 3. **Run** in a dirty git repo:
    ```sh
    preflight
@@ -151,15 +152,15 @@ npx @khosla/preflight doctor
 | `--no-verify` | Skip local verifiers |
 | `--no-delta` | Skip delta memory |
 | `--no-recall` | Skip pickbrain |
-| `--with a,b` | Explicit judges |
-| `--model` / `--effort` | Backend tuning |
+| `--with a,b` | Explicit judges (`pi,claude,codex,amp,opencode,gemini,anthropic`) |
+| `--model` / `--effort` | Backend tuning (`--effort` = anthropic API) |
 
 ### Env
 
 | Var | Meaning |
 |---|---|
-| `ANTHROPIC_API_KEY` | Anthropic backend |
-| `PREFLIGHT_MODEL` | Default anthropic model |
+| `ANTHROPIC_API_KEY` | Optional Anthropic API backend |
+| `PREFLIGHT_MODEL` | Model override for API / CLIs that accept `--model` |
 | `PREFLIGHT_NO_RECALL=1` | Disable pickbrain |
 | `PREFLIGHT_RECALL_SINCE` | Memory window (default `90d`) |
 

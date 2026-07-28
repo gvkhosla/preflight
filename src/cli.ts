@@ -30,9 +30,9 @@ options:
   --auto                 skip browser; derive verdict from findings
   --strict               force multi-judge merge (default when 2+ backends)
   --no-strict            single judge even if multiple backends exist
-  --with <backend,...>   judges: anthropic, claude, codex, gemini, pi
+  --with <backend,...>   pi, claude, codex, amp, opencode, gemini, anthropic
   --model <id>           model id for backends that accept it
-  --effort <level>       low|medium|high|xhigh|max (anthropic)
+  --effort <level>       low|medium|high|xhigh|max (anthropic API only)
   --no-open              don't open the browser
   --no-recall            skip pickbrain memory
   --no-verify            skip local typecheck/related tests

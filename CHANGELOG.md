@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+- CLI-first backends: pi, claude, codex, amp, opencode, gemini (preferred)
+- Anthropic API moved to optional power-up (last in auto-detect)
+- Auto-strict prefers two agent CLIs when available
+- doctor distinguishes CLI vs API backends
+
 ## 0.1.4
 
 - Website + OG image redesigned closer to diffs.com
