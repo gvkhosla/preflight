@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0c0a09"/>
+      <stop offset="100%" stop-color="#1c1917"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="64" y="64" width="1072" height="502" rx="28" fill="#292524" stroke="#44403c" stroke-width="2"/>
+  <text x="100" y="160" fill="#a8a29e" font-family="ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="600" letter-spacing="4">PREFLIGHT</text>
+  <text x="100" y="250" fill="#fafaf9" font-family="ui-serif, Georgia, serif" font-size="64" font-weight="600">Ship what you meant</text>
+  <text x="100" y="320" fill="#fafaf9" font-family="ui-serif, Georgia, serif" font-size="64" font-weight="600">to ship.</text>
+  <text x="100" y="400" fill="#d6d3d1" font-family="ui-sans-serif, system-ui, sans-serif" font-size="28">Multi-judge findings · grounded diffs · executable verdicts</text>
+  <rect x="100" y="450" width="420" height="64" rx="14" fill="#4f46e5"/>
+  <text x="130" y="492" fill="#fff" font-family="ui-monospace, Menlo, monospace" font-size="26">npm i -g @khosla/preflight</text>
+</svg>

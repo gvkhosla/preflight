@@ -1,6 +1,6 @@
 {
   "name": "@khosla/preflight",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publishConfig": {
     "access": "public"
   },
@@ -34,7 +34,8 @@
     "README.md",
     "LICENSE",
     "AGENTS.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "docs"
   ],
   "engines": {
     "node": ">=20"
@@ -45,6 +46,7 @@
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit",
     "eval": "bun evals/score.ts",
+    "eval:live": "bun evals/live.ts",
     "dev": "bun src/cli.ts"
   },
   "dependencies": {

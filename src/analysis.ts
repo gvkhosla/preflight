@@ -74,12 +74,16 @@ export interface ContextPack {
   intentHints: string;
   recall: string;
   codeContext: string;
+  verify?: string;
+  delta?: string;
 }
 
 function contextBlock(ctx: ContextPack): string {
   return [
     ctx.intentHints.trim() && `## Intent hints (from git/branch)\n${ctx.intentHints.trim()}`,
     ctx.codeContext.trim() && `## Code context (symbols, related tests, file windows)\n${ctx.codeContext.trim()}`,
+    ctx.verify?.trim() && `## Verification evidence (local commands)\n${ctx.verify.trim()}`,
+    ctx.delta?.trim() && ctx.delta.trim(),
     ctx.recall.trim() && `## Precedent from local memory (pickbrain)\n${ctx.recall.trim()}`,
   ]
     .filter(Boolean)
@@ -95,7 +99,7 @@ Do NOT write a walkthrough or tutorial. Find real ship risks in the diff. Prefer
 
 Each hunk is labeled "hunk hN". Lines look like "42|+code" (new file line) or "-17|-code" (deleted old line).
 
-Use code context (symbols, related tests, file windows) to judge completeness and regressions — e.g. missing tests for new branches, broken callers, API shape drift.
+Use code context (symbols, related tests, file windows), verification evidence, and delta re-review notes to judge completeness and regressions — e.g. missing tests for new branches, broken callers, API shape drift, failed typecheck/tests.
 
 ${ctxText ? ctxText + "\n\n" : ""}Return ONLY a JSON object:
 {

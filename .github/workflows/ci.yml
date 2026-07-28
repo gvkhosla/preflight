@@ -23,8 +23,11 @@ jobs:
         run: bun run build
       - name: Fixture evals
         run: bun evals/score.ts
+      - name: Live evals (skip if no backend)
+        run: bun evals/live.ts
       - name: CLI smoke
         run: |
           node dist/cli.js --version
           node dist/cli.js --help
           node dist/cli.js doctor || true
+          npx --yes . doctor || node dist/cli.js doctor || true

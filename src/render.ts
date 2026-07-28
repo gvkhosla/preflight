@@ -1,7 +1,14 @@
-import { createHighlighter, bundledLanguages, type Highlighter } from "shiki";
 import { hunkById, type DiffFile, type Hunk } from "./diff";
 import type { MergedFinding } from "./merge";
 import type { PipelineResult } from "./pipeline";
+
+// shiki is loaded lazily so --json/--auto agent runs never pay for highlighting.
+type Highlighter = {
+  codeToTokens: (
+    code: string,
+    opts: { lang: never; themes: { light: string; dark: string } },
+  ) => { tokens: { htmlStyle?: string | Record<string, string>; color?: string; content: string }[][] };
+};
 
 const LANG_BY_EXT: Record<string, string> = {
   ts: "typescript", tsx: "tsx", js: "javascript", jsx: "jsx", mjs: "javascript", cjs: "javascript",
@@ -12,10 +19,12 @@ const LANG_BY_EXT: Record<string, string> = {
   toml: "toml", md: "markdown", sql: "sql", vue: "vue", svelte: "svelte",
 };
 
-function langFor(path: string): string {
+function langFor(path: string, bundled?: Record<string, unknown>): string {
   const ext = path.split(".").pop()?.toLowerCase() ?? "";
   const lang = LANG_BY_EXT[ext];
-  return lang && lang in bundledLanguages ? lang : "text";
+  if (!lang) return "text";
+  if (bundled && !(lang in bundled)) return "text";
+  return lang;
 }
 
 const esc = (s: string) =>
@@ -38,11 +47,18 @@ function tokenStyle(token: { htmlStyle?: string | Record<string, string>; color?
   return token.color ? `color:${token.color}` : "";
 }
 
-function renderHunk(hl: Highlighter, file: DiffFile, hunk: Hunk, range?: { from: number; to: number } | null): string {
-  const lang = langFor(file.path);
+function renderHunk(
+  hl: Highlighter | null,
+  file: DiffFile,
+  hunk: Hunk,
+  range?: { from: number; to: number } | null,
+  bundled?: Record<string, unknown>,
+): string {
+  const lang = langFor(file.path, bundled);
   const code = hunk.lines.map((l) => l.text).join("\n");
   let tokenLines: { htmlStyle?: string | Record<string, string>; color?: string; content: string }[][];
   try {
+    if (!hl) throw new Error("no highlighter");
     tokenLines = hl.codeToTokens(code, {
       lang: lang as never,
       themes: { light: "github-light", dark: "github-dark" },
@@ -85,8 +101,19 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
   const backend = result.backend;
   const agree = result.agreementSummary ?? "";
   const merged = result.mergedFindings;
-  const langs = [...new Set(files.map((f) => langFor(f.path)).filter((l) => l !== "text"))];
-  const hl = await createHighlighter({ themes: ["github-light", "github-dark"], langs });
+  let hl: Highlighter | null = null;
+  let bundled: Record<string, unknown> | undefined;
+  try {
+    const shiki = await import("shiki");
+    bundled = shiki.bundledLanguages as unknown as Record<string, unknown>;
+    const langs = [...new Set(files.map((f) => langFor(f.path, bundled)).filter((l) => l !== "text"))];
+    hl = (await shiki.createHighlighter({
+      themes: ["github-light", "github-dark"],
+      langs: langs as never[],
+    })) as unknown as Highlighter;
+  } catch {
+    hl = null;
+  }
   const hunks = hunkById(files);
 
   const blockers = merged.filter((f) => f.severity === "blocker").length;
@@ -102,7 +129,7 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
           if (!found) return `<p class="muted">unknown hunk ${esc(sn.hunk_id)}</p>`;
           const range = sn.from != null && sn.to != null ? { from: sn.from, to: sn.to } : null;
           const note = sn.note.trim() ? `<p class="note">${esc(sn.note).replace(/`([^`]+)`/g, "<code>$1</code>")}</p>` : "";
-          return renderHunk(hl, found.file, found.hunk, range) + note;
+          return renderHunk(hl, found.file, found.hunk, range, bundled) + note;
         })
         .join("");
       return `<section class="section">
@@ -123,6 +150,7 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
                   hunks.get(f.hunk_id)!.file,
                   hunks.get(f.hunk_id)!.hunk,
                   f.from != null && f.to != null ? { from: f.from, to: f.to } : null,
+                  bundled,
                 )
               : "";
           const judges = f.judges?.length ? f.judges.join(", ") : "";

@@ -107,11 +107,18 @@ export function getBackend(name: string): Backend {
   return b;
 }
 
+export async function listAvailableBackends(): Promise<Backend[]> {
+  const available: Backend[] = [];
+  for (const b of Object.values(BACKENDS)) {
+    if (await b.available()) available.push(b);
+  }
+  return available;
+}
+
 export async function resolveBackends(requested: string[] | null): Promise<Backend[]> {
   if (requested && requested.length > 0) return requested.map(getBackend);
-  for (const backend of Object.values(BACKENDS)) {
-    if (await backend.available()) return [backend];
-  }
+  const available = await listAvailableBackends();
+  if (available[0]) return [available[0]];
   throw new Error(
     "no backend available: set ANTHROPIC_API_KEY, or install one of: claude, codex, gemini, pi (or pass --with)",
   );
@@ -121,10 +128,7 @@ export async function resolveBackends(requested: string[] | null): Promise<Backe
 export async function resolveStrictJudges(requested: string[] | null): Promise<Backend[]> {
   if (requested && requested.length > 0) return requested.map(getBackend);
 
-  const available: Backend[] = [];
-  for (const b of Object.values(BACKENDS)) {
-    if (await b.available()) available.push(b);
-  }
+  const available = await listAvailableBackends();
   if (available.length === 0) {
     throw new Error(
       "no backend available: set ANTHROPIC_API_KEY, or install one of: claude, codex, gemini, pi",
