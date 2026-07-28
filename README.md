@@ -124,7 +124,7 @@ diff + intent + symbols/tests + verify + delta + optional pickbrain
 | **Delta** | Re-reviews with prior open findings in mind |
 | **Judge / ground / merge** | Findings only, anchored to real hunks |
 | **Explain** | Short human walkthrough |
-| **Diff UI** | [`@pierre/diffs`](https://diffs.com) stacked render (Shiki themes) |
+| **Diff UI** | Clean stacked snippets in the review report |
 
 ---
 
@@ -198,3 +198,7 @@ Publish notes: [`docs/PUBLISHING.md`](docs/PUBLISHING.md)
 ## License
 
 MIT © Geet Khosla
+
+## Credits
+
+Diff snippets in the review UI are rendered with [`@pierre/diffs`](https://www.npmjs.com/package/@pierre/diffs).

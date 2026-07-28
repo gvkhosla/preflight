@@ -6,7 +6,7 @@
   <text x="106" y="78" fill="#8a8a8a" font-family="ui-sans-serif,system-ui,sans-serif" font-size="22" font-weight="500">preflight</text>
   <text x="64" y="280" fill="#ededed" font-family="ui-sans-serif,system-ui,sans-serif" font-size="84" font-weight="600" letter-spacing="-3">Ship what you</text>
   <text x="64" y="370" fill="#ededed" font-family="ui-sans-serif,system-ui,sans-serif" font-size="84" font-weight="600" letter-spacing="-3">meant to ship.</text>
-  <text x="64" y="430" fill="#888" font-family="ui-sans-serif,system-ui,sans-serif" font-size="26">Multi-judge findings · @pierre/diffs · executable verdicts</text>
+  <text x="64" y="430" fill="#888" font-family="ui-sans-serif,system-ui,sans-serif" font-size="26">Explain the change · find blockers · return a verdict</text>
   <rect x="64" y="500" width="420" height="56" rx="28" fill="#fff"/>
   <text x="92" y="536" fill="#000" font-family="ui-monospace,Menlo,monospace" font-size="22" font-weight="500">npm i -g @khosla/preflight</text>
   <text x="900" y="536" fill="#666" font-family="ui-monospace,Menlo,monospace" font-size="18" text-anchor="end">local-first ship gate</text>
