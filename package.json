@@ -52,7 +52,6 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
     "@pierre/diffs": "1.2.12",
-    "shiki": "^3.13.0",
     "zod": "^4"
   },
   "devDependencies": {
