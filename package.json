@@ -1,6 +1,9 @@
 {
-  "name": "preflight",
+  "name": "@gvkhosla/preflight",
   "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Local ship gate for agent-built software: multi-judge findings, grounded diffs, executable verdict.",
   "type": "module",
   "license": "MIT",

@@ -18,7 +18,13 @@ diff + intent + optional pickbrain
 ## Install
 
 ```sh
-# from GitHub (recommended while private/npm name settles)
+# npm
+npm install -g @gvkhosla/preflight
+
+# bun
+bun install -g @gvkhosla/preflight
+
+# from GitHub
 bun install -g github:gvkhosla/preflight
 
 # or clone
