@@ -1,205 +1,93 @@
 # preflight
 
-> After your coding agent says “done,” run **preflight**.
+> After your coding agent finishes, run one command.
 
-Local ship gate for agent-built software: multi-judge findings, grounded against the real diff, one executable verdict.
+Local ship gate for agent-built software.
+
+```sh
+npx @khosla/preflight
+```
+
+That’s the whole start. Browser opens with what changed + findings.  
+Exit **0** = approved · **2** = fix findings · **1** = error.
 
 <p align="center">
-  <a href="docs/demo-ui.html"><img src="docs/og.png" alt="preflight — ship what you meant to ship" width="100%"/></a>
+  <img src="docs/og.png" alt="preflight" width="100%"/>
 </p>
 
+## Get value in seconds
+
+1. **Have a dirty git repo** (or a branch range)
+2. **Have an agent CLI** on PATH: `pi`, `claude`, `codex`, `amp`, `opencode`, or `gemini`  
+   (optional: `ANTHROPIC_API_KEY`)
+3. **Run**
+   ```sh
+   npx @khosla/preflight
+   ```
+
+Agent / CI mode:
+
 ```sh
-npm install -g @khosla/preflight
-# or one-shot:
+npx @khosla/preflight --json --auto
+```
+
+Check setup:
+
+```sh
 npx @khosla/preflight doctor
-
-preflight                 # review current diff (auto-strict if 2+ backends)
-preflight --json --auto   # agent mode
 ```
 
-Exit codes: **`0` approved** · **`2` changes requested** · **`1` error**
-
-**Names:** CLI `preflight` · npm `@khosla/preflight` · GitHub `gvkhosla/preflight`
-
----
-
-## 30-second start
-
-1. **Install**
-   ```sh
-   npm install -g @khosla/preflight
-   npx @khosla/preflight doctor
-   ```
-2. **Backend** — have an agent CLI on PATH (`pi`, `claude`, `codex`, `amp`, `opencode`, or `gemini`).
-   Optional power-up: `ANTHROPIC_API_KEY` if you prefer the Anthropic API.
-3. **Run** in a dirty git repo:
-   ```sh
-   preflight
-   ```
-4. Browser opens → keep/dismiss findings → **Looks good** / **Request changes**  
-   ([UI mock](docs/demo-ui.html))
-
-### Sample terminal
-
-```text
-preflight: auto-strict (2 backends; --no-strict to disable)
-preflight: packing context for 3 hunks across 2 files…
-preflight: code context attached (symbols/tests/files)
-preflight: running local verifiers…
-preflight: verify — Verification soft-pass or skipped; do not invent failures.
-preflight: judging with anthropic, codex…
-preflight: 2 judge(s), 1 merged finding(s), 1 high-agreement
-preflight: writing walkthrough with anthropic…
-preflight: review at http://127.0.0.1:52341
-```
-
-```text
-Preflight: CHANGES REQUESTED
-
-Summary: Greet now rejects blank names.
-Findings (1):
-
-F1 [should-fix/missing-test agree=2/2 conf=high] No test for blank name
-  where: src/greet.ts:2
-  action: Add a unit test for blank name
-
-Agent instructions: fix each open blocker/should-fix finding, then re-run preflight.
-```
-
----
-
-## Agent mode
+## Optional global install
 
 ```sh
-preflight --json --auto
-preflight --json --auto --strict     # force multi-judge
-preflight --json --auto --no-strict  # single judge (faster)
+npm i -g @khosla/preflight
+preflight
 ```
-
-```json
-{
-  "status": "changes_requested",
-  "findings": [
-    {
-      "id": "F1",
-      "severity": "blocker",
-      "agreement": "2/2",
-      "confidence": "high",
-      "action": "…"
-    }
-  ]
-}
-```
-
-### `AGENTS.md` / `CLAUDE.md`
-
-```text
-After a non-trivial change, run `preflight --json --auto`.
-- exit 0 approved → continue
-- exit 2 → fix each open finding by id, then re-run preflight (delta re-review is automatic)
-```
-
-See [`AGENTS.md`](./AGENTS.md).
-
----
 
 ## What it does
 
-```
-diff + intent + symbols/tests + verify + delta + optional pickbrain
-        ↓
-  judge A ──┐
-  judge B ──┴→ ground → merge (agreement / confidence)
-        ↓
-   explainer (walkthrough only)
-        ↓
-  UI or --auto → APPROVED | CHANGES REQUESTED
-        ↓
-  save .preflight/last-verdict.json (delta next time)
+1. Reads your git diff (or stdin)
+2. Packs local context (intent, symbols/tests, optional verify + memory)
+3. Judges with your agent CLI (multi-judge when 2+ CLIs available)
+4. Opens a review UI **or** prints JSON for agents
+5. Returns approve / changes-requested
+
+## Agent snippet
+
+```text
+After a non-trivial change, run:
+  npx @khosla/preflight --json --auto
+- exit 0 → continue
+- exit 2 → fix each open finding by id, re-run
 ```
 
-| Layer | Job |
+## Common flags
+
+| Flag | Meaning |
 |---|---|
-| **Auto-strict** | Uses 2 judges when available |
-| **Verify** | Best-effort `tsc` + related `bun test` as evidence |
-| **Delta** | Re-reviews with prior open findings in mind |
-| **Judge / ground / merge** | Findings only, anchored to real hunks |
-| **Explain** | Short human walkthrough |
-| **Diff UI** | Clean stacked snippets in the review report |
-
----
-
-## Commands
-
-```sh
-preflight                         # uncommitted changes
-preflight main...HEAD             # branch range
-preflight --json --auto           # headless agent loop
-preflight --no-strict             # single judge
-preflight --no-verify             # skip local typecheck/tests
-preflight --no-delta              # ignore prior verdict state
-git diff -U10 | preflight
-preflight doctor
-preflight --version
-npx @khosla/preflight doctor
-```
-
-| Flag | Effect |
-|---|---|
+| `--json --auto` | Headless agent mode |
 | `--strict` / `--no-strict` | Force / disable multi-judge |
-| `--auto` | No browser |
-| `--json` | Machine-readable stdout |
-| `--no-verify` | Skip local verifiers |
-| `--no-delta` | Skip delta memory |
-| `--no-recall` | Skip pickbrain |
-| `--with a,b` | Explicit judges (`pi,claude,codex,amp,opencode,gemini,anthropic`) |
-| `--model` / `--effort` | Backend tuning (`--effort` = anthropic API) |
+| `--with pi,codex` | Choose backends |
+| `--no-verify` | Skip local tsc/tests |
+| `--no-delta` | Ignore prior review state |
 
-### Env
+## Links
 
-| Var | Meaning |
-|---|---|
-| `ANTHROPIC_API_KEY` | Optional Anthropic API backend |
-| `PREFLIGHT_MODEL` | Model override for API / CLIs that accept `--model` |
-| `PREFLIGHT_NO_RECALL=1` | Disable pickbrain |
-| `PREFLIGHT_RECALL_SINCE` | Memory window (default `90d`) |
-
-If `pickbrain` is on your `PATH`, precedent memory is attached automatically.
-
----
-
-## Install
-
-```sh
-npm install -g @khosla/preflight
-bun install -g @khosla/preflight
-npx @khosla/preflight doctor
-bun install -g github:gvkhosla/preflight
-```
-
----
+- Site: https://gvkhosla.github.io/preflight/
+- UI mock: https://gvkhosla.github.io/preflight/demo-ui.html
+- GitHub: https://github.com/gvkhosla/preflight
+- npm: https://www.npmjs.com/package/@khosla/preflight
 
 ## Develop
 
 ```sh
-bun install
-bun test
-bun run typecheck
-bun run build
-bun evals/score.ts      # offline fixtures
-bun evals/live.ts       # optional live LLM (skips if no backend)
+bun install && bun test && bun run build
 ```
-
-CI runs tests, typecheck, build, fixture evals, and soft live evals.
-
-Publish notes: [`docs/PUBLISHING.md`](docs/PUBLISHING.md)
-
----
-
-## License
-
-MIT © Geet Khosla
 
 ## Credits
 
 Diff snippets in the review UI are rendered with [`@pierre/diffs`](https://www.npmjs.com/package/@pierre/diffs).
+
+## License
+
+MIT © Geet Khosla

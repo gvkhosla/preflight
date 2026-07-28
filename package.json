@@ -1,6 +1,6 @@
 {
   "name": "@khosla/preflight",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "publishConfig": {
     "access": "public"
   },
@@ -15,7 +15,7 @@
   "bugs": {
     "url": "https://github.com/gvkhosla/preflight/issues"
   },
-  "homepage": "https://github.com/gvkhosla/preflight#readme",
+  "homepage": "https://gvkhosla.github.io/preflight/",
   "keywords": [
     "preflight",
     "code-review",

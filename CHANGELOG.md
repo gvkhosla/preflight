@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Mobile-first review UI + demo (no header wrap/overflow)
+- Uniform Geist design system across site, demo, and report UI
+- Simpler onboarding: `npx @khosla/preflight` as the default path
+- Version sync push to npm
+
 ## 0.1.5
 
 - CLI-first backends: pi, claude, codex, amp, opencode, gemini (preferred)

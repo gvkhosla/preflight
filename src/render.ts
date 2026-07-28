@@ -86,6 +86,24 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
   const should = merged.filter((f) => f.severity === "should-fix").length;
   const nits = merged.filter((f) => f.severity === "nit").length;
   const suggested = blockers + should > 0 ? "changes_requested" : "approved";
+  const statusPill =
+    suggested === "approved"
+      ? "ready"
+      : [
+          blockers ? `${blockers} blocker${blockers === 1 ? "" : "s"}` : "",
+          should ? `${should} should-fix` : "",
+          !blockers && !should && nits ? `${nits} nit${nits === 1 ? "" : "s"}` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ");
+  const agreeShort = (() => {
+    const m = agree.match(/(\d+)\s*judge/);
+    const n = m ? Number(m[1]) : result.judges?.length || 1;
+    const findingsN = merged.length;
+    // Compact: "pi" or "pi+codex · 2j"
+    return n > 1 ? `${n}j` : "";
+  })();
+  const backendPill = [backend, agreeShort].filter(Boolean).join(" · ");
 
   // Pre-render pierre diffs (parallel).
   const sectionBlocks = await Promise.all(
@@ -162,7 +180,8 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
 <title>${esc(analysis.title)} — preflight</title>
 <style>
   @font-face {
@@ -234,31 +253,44 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
 
   header.app {
     position: sticky; top: 0; z-index: 20;
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 22px;
+    padding: 12px 16px;
+    padding-top: max(12px, env(safe-area-inset-top));
     border-bottom: 1px solid var(--border);
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
     backdrop-filter: blur(14px) saturate(1.2);
   }
+  .app-row {
+    display: flex; align-items: center; gap: 10px; min-width: 0;
+  }
   .brand {
-    font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    flex: 0 0 auto;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--muted);
   }
   header.app h1 {
-    flex: 1; margin: 0;
-    font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+    flex: 1 1 auto; min-width: 0; margin: 0;
+    font-size: 14px; font-weight: 600; letter-spacing: -0.02em;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  .pills {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 8px;
+  }
   .pill {
+    display: inline-flex; align-items: center;
     font-size: 12px; font-weight: 500;
     padding: 5px 10px; border-radius: 999px;
     border: 1px solid var(--border); color: var(--muted);
     background: var(--bg-elev);
+    white-space: nowrap; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis;
   }
   .pill.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 35%, var(--border)); }
   .pill.ok { color: var(--good); border-color: color-mix(in srgb, var(--good) 35%, var(--border)); }
 
-  main { max-width: 920px; margin: 0 auto; padding: 28px 22px 150px; }
+  main { max-width: 920px; margin: 0 auto; padding: 18px 16px 200px; }
+  .where { word-break: break-all; }
+  .why, .action, .prose p { overflow-wrap: anywhere; }
 
   .hero {
     padding: 8px 0 6px;
@@ -331,14 +363,17 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
   .pierre-host {
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    overflow: hidden;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
     margin: 10px 0 4px;
     background: #0a0a0a;
+    max-width: 100%;
   }
   @media (prefers-color-scheme: light) {
     .pierre-host { background: #fff; }
   }
   .pierre-host > * { max-width: 100%; }
+  .pierre-host pre, .pierre-host code { word-break: normal; overflow-wrap: normal; }
   .pierre-fallback {
     border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 10px 0;
   }
@@ -380,23 +415,25 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
   footer.bar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     border-top: 1px solid var(--border);
-    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
     backdrop-filter: blur(16px) saturate(1.2);
-    padding: 12px 18px 16px;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
   footer.bar .inner { max-width: 920px; margin: 0 auto; display: grid; gap: 10px; }
   textarea {
-    width: 100%; min-height: 56px; resize: vertical;
+    width: 100%; min-height: 52px; resize: vertical;
     border-radius: 12px; border: 1px solid var(--border);
     padding: 10px 12px; background: var(--bg-card); color: inherit;
     font: inherit;
   }
   textarea:focus { outline: none; border-color: var(--border-strong); }
-  .btns { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
-  .hint { flex: 1; font-size: 12px; color: var(--muted); }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: stretch; align-items: center; }
+  .hint { flex: 1 1 100%; font-size: 12px; color: var(--muted); order: -1; }
   button {
-    border: 0; border-radius: 999px; padding: 9px 14px;
+    border: 0; border-radius: 999px; padding: 10px 14px;
     font: 600 13px var(--font); cursor: pointer;
+    flex: 1 1 calc(50% - 4px);
   }
   button.secondary {
     background: transparent; color: var(--fg);
@@ -405,6 +442,17 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
   button.good { background: var(--fg); color: var(--bg); }
   button.good:disabled { opacity: 0.4; cursor: not-allowed; }
   button:hover { filter: brightness(1.05); }
+  @media (min-width: 720px) {
+    header.app { padding: 14px 22px; }
+    header.app h1 { font-size: 15px; }
+    .pills { margin-top: 0; margin-left: auto; flex-wrap: nowrap; }
+    header.app { display: flex; align-items: center; gap: 12px; }
+    .app-row { flex: 1; min-width: 0; }
+    main { padding: 28px 22px 180px; }
+    .btns { justify-content: flex-end; }
+    .hint { flex: 1 1 auto; order: 0; }
+    button { flex: 0 0 auto; min-width: 140px; }
+  }
 
   #done-view { display: none; text-align: center; padding: 22vh 20px; }
   #done-view h2 {
@@ -415,12 +463,14 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
 </head>
 <body>
 <header class="app">
-  <span class="brand">preflight</span>
-  <h1>${esc(analysis.title)}</h1>
-  <span class="pill ${suggested === "approved" ? "ok" : "bad"}" id="suggest">
-    ${suggested === "approved" ? "ready" : `${blockers} blocker · ${should} should-fix · ${nits} nit`}
-  </span>
-  <span class="pill">${esc(backend)}${agree ? " · " + esc(agree) : ""}${recallUsed ? " · memory" : ""}</span>
+  <div class="app-row">
+    <span class="brand">preflight</span>
+    <h1 title="${esc(analysis.title)}">${esc(analysis.title)}</h1>
+  </div>
+  <div class="pills">
+    <span class="pill ${suggested === "approved" ? "ok" : "bad"}" id="suggest">${esc(statusPill)}</span>
+    <span class="pill">${esc(backendPill)}${recallUsed ? " · mem" : ""}</span>
+  </div>
 </header>
 <main id="main">
   <div class="hero card">

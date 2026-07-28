@@ -8,7 +8,9 @@
 *.log
 coverage/
 dist/
+docs/demo-report.html
 docs/landing-preview.png
+docs/mobile-*.png
 docs/og-capture.png
 evals/out/
 node_modules/
