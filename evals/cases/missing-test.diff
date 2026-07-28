@@ -1,0 +1,14 @@
+diff --git a/src/billing/charge.ts b/src/billing/charge.ts
+index 1111111..2222222 100644
+--- a/src/billing/charge.ts
++++ b/src/billing/charge.ts
+@@ -1,6 +1,12 @@
+ export async function chargeCustomer(input: { customerId: string; amount: number; paymentIntentId?: string }) {
+-  return stripe.charges.create({ customer: input.customerId, amount: input.amount });
++  return stripe.charges.create({
++    customer: input.customerId,
++    amount: input.amount,
++    // retries should not double-charge
++    idempotencyKey: input.paymentIntentId ?? input.customerId,
++  });
+ }

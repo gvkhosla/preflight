@@ -1,6 +1,7 @@
 import { createHighlighter, bundledLanguages, type Highlighter } from "shiki";
-import type { AnalysisResult } from "./analysis";
 import { hunkById, type DiffFile, type Hunk } from "./diff";
+import type { MergedFinding } from "./merge";
+import type { PipelineResult } from "./pipeline";
 
 const LANG_BY_EXT: Record<string, string> = {
   ts: "typescript", tsx: "tsx", js: "javascript", jsx: "jsx", mjs: "javascript", cjs: "javascript",
@@ -75,17 +76,22 @@ function renderHunk(hl: Highlighter, file: DiffFile, hunk: Hunk, range?: { from:
   </div>`;
 }
 
-export async function renderReport(results: AnalysisResult[], files: DiffFile[], recallUsed: boolean): Promise<string> {
-  const analysis = results[0].analysis;
-  const backend = results[0].backend;
-  const agree = results[0].agreementSummary ?? "";
+function confClass(c: MergedFinding["confidence"]): string {
+  return c === "high" ? "conf-high" : c === "low" ? "conf-low" : "conf-med";
+}
+
+export async function renderReport(result: PipelineResult, files: DiffFile[], recallUsed: boolean): Promise<string> {
+  const analysis = result.analysis;
+  const backend = result.backend;
+  const agree = result.agreementSummary ?? "";
+  const merged = result.mergedFindings;
   const langs = [...new Set(files.map((f) => langFor(f.path)).filter((l) => l !== "text"))];
   const hl = await createHighlighter({ themes: ["github-light", "github-dark"], langs });
   const hunks = hunkById(files);
 
-  const blockers = analysis.findings.filter((f) => f.severity === "blocker").length;
-  const should = analysis.findings.filter((f) => f.severity === "should-fix").length;
-  const nits = analysis.findings.filter((f) => f.severity === "nit").length;
+  const blockers = merged.filter((f) => f.severity === "blocker").length;
+  const should = merged.filter((f) => f.severity === "should-fix").length;
+  const nits = merged.filter((f) => f.severity === "nit").length;
   const suggested = blockers + should > 0 ? "changes_requested" : "approved";
 
   const sections = analysis.sections
@@ -107,8 +113,8 @@ export async function renderReport(results: AnalysisResult[], files: DiffFile[],
     })
     .join("");
 
-  const findings = analysis.findings.length
-    ? analysis.findings
+  const findings = merged.length
+    ? merged
         .map((f) => {
           const snippet =
             f.hunk_id && hunks.has(f.hunk_id)
@@ -119,15 +125,20 @@ export async function renderReport(results: AnalysisResult[], files: DiffFile[],
                   f.from != null && f.to != null ? { from: f.from, to: f.to } : null,
                 )
               : "";
-          return `<article class="finding sev-${esc(f.severity)}" data-id="${esc(f.id)}">
+          const judges = f.judges?.length ? f.judges.join(", ") : "";
+          return `<article class="finding sev-${esc(f.severity)}" data-id="${esc(f.id)}" data-severity="${esc(f.severity)}">
             <header>
               <span class="badge">${esc(f.severity)}</span>
               <span class="kind">${esc(f.kind)}</span>
+              <span class="agree-pill" title="Judge agreement">${esc(f.agreement)}</span>
+              <span class="conf-pill ${confClass(f.confidence)}">${esc(f.confidence)}</span>
               <strong>${esc(f.id)} · ${esc(f.title)}</strong>
             </header>
+            ${judges ? `<p class="judges">judges: ${esc(judges)}</p>` : ""}
             <p class="where">${esc(f.where)}</p>
             <p>${esc(f.why).replace(/`([^`]+)`/g, "<code>$1</code>")}</p>
             <p class="action"><span>Fix:</span> ${esc(f.action).replace(/`([^`]+)`/g, "<code>$1</code>")}</p>
+            ${!f.grounded && f.groundReason ? `<p class="muted">ungrounded: ${esc(f.groundReason)}</p>` : ""}
             ${snippet}
             <div class="finding-actions">
               <label><input type="radio" name="f-${esc(f.id)}" value="accepted" checked> Keep</label>
@@ -176,7 +187,7 @@ export async function renderReport(results: AnalysisResult[], files: DiffFile[],
     padding: 12px 20px; border-bottom: 1px solid var(--border);
     background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px);
   }
-  header.app .brand { color: var(--muted); font-size: 13px; }
+  header.app .brand { color: var(--muted); font-size: 13px; font-weight: 600; letter-spacing: .02em; }
   header.app h1 { flex: 1; margin: 0; font: 600 17px/1.3 ui-serif, Georgia, serif; }
   .pill {
     font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
@@ -184,7 +195,7 @@ export async function renderReport(results: AnalysisResult[], files: DiffFile[],
   }
   .pill.bad { color: #b91c1c; border-color: color-mix(in srgb, #b91c1c 35%, var(--border)); }
   .pill.ok { color: #047857; border-color: color-mix(in srgb, #047857 35%, var(--border)); }
-  main { max-width: 880px; margin: 0 auto; padding: 24px 20px 140px; }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 20px 160px; }
   .card {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
     padding: 16px 18px; margin-bottom: 16px;
@@ -224,6 +235,14 @@ export async function renderReport(results: AnalysisResult[], files: DiffFile[],
   .sev-should-fix .badge { background: var(--should); }
   .sev-nit .badge { background: var(--nit); }
   .kind { color: var(--muted); font-size: 12px; }
+  .agree-pill, .conf-pill {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .conf-high { color: #047857; border-color: color-mix(in srgb, #047857 40%, var(--border)); }
+  .conf-med { color: #b45309; border-color: color-mix(in srgb, #b45309 40%, var(--border)); }
+  .conf-low { color: var(--muted); }
+  .judges { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
   .where { font: 12px ui-monospace, Menlo, monospace; color: var(--muted); }
   .action span { font-weight: 700; color: var(--accent); }
   .finding-actions {
@@ -247,13 +266,14 @@ export async function renderReport(results: AnalysisResult[], files: DiffFile[],
     border: 1px solid var(--border); padding: 10px; background: var(--card); color: inherit;
     font: inherit;
   }
-  .btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .btns { display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
+  .hint { flex: 1; font-size: 12px; color: var(--muted); }
   button {
     border: 0; border-radius: 10px; padding: 10px 16px; font: 600 14px inherit; cursor: pointer;
   }
   button.secondary { background: transparent; border: 1px solid var(--border); color: inherit; }
-  button.primary { background: var(--accent); color: #fff; }
   button.good { background: #047857; color: #fff; }
+  button.good:disabled { opacity: .45; cursor: not-allowed; }
   #done-view { display: none; text-align: center; padding: 20vh 20px; }
   #done-view h2 { font: 600 28px ui-serif, Georgia, serif; }
 </style>
@@ -287,8 +307,10 @@ export async function renderReport(results: AnalysisResult[], files: DiffFile[],
   <div class="inner">
     <textarea id="notes" placeholder="Optional notes for the agent…"></textarea>
     <div class="btns">
+      <span class="hint" id="hint"></span>
       <button class="secondary" id="raw" type="button">Request changes</button>
       <button class="good" id="approve" type="button">Looks good</button>
+      <button class="secondary" id="force" type="button" style="display:none">Approve anyway</button>
     </div>
   </div>
 </footer>
@@ -299,6 +321,36 @@ export async function renderReport(results: AnalysisResult[], files: DiffFile[],
 </div>
 
 <script type="module">
+function openBlockers() {
+  return [...document.querySelectorAll(".finding")].filter((el) => {
+    const sev = el.dataset.severity;
+    if (sev !== "blocker" && sev !== "should-fix") return false;
+    const status = el.querySelector('input[type=radio]:checked')?.value || "accepted";
+    return status === "accepted";
+  }).length;
+}
+
+function refreshApproveState() {
+  const n = openBlockers();
+  const approve = document.getElementById("approve");
+  const force = document.getElementById("force");
+  const hint = document.getElementById("hint");
+  if (n > 0) {
+    approve.style.display = "none";
+    force.style.display = "";
+    hint.textContent = n + " open blocker/should-fix finding(s). Dismiss them or approve anyway.";
+  } else {
+    approve.style.display = "";
+    force.style.display = "none";
+    hint.textContent = "";
+  }
+}
+
+document.querySelectorAll(".finding input[type=radio]").forEach((el) => {
+  el.addEventListener("change", refreshApproveState);
+});
+refreshApproveState();
+
 function collectDecisions() {
   const findingDecisions = {};
   for (const el of document.querySelectorAll(".finding")) {
@@ -326,6 +378,7 @@ async function submit(forceStatus) {
 }
 
 document.getElementById("approve").addEventListener("click", () => submit("approved"));
+document.getElementById("force").addEventListener("click", () => submit("approved"));
 document.getElementById("raw").addEventListener("click", () => submit("changes_requested"));
 </script>
 </body>

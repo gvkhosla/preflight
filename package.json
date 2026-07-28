@@ -1,6 +1,6 @@
 {
   "name": "@khosla/preflight",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": {
     "access": "public"
   },
@@ -22,7 +22,9 @@
     "coding-agents",
     "git-diff",
     "llm-judge",
-    "cli"
+    "cli",
+    "ai-agents",
+    "developer-tools"
   ],
   "bin": {
     "preflight": "dist/cli.js"
@@ -30,17 +32,19 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "AGENTS.md",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "build": "esbuild src/cli.ts --bundle --packages=external --platform=node --format=esm --outfile=dist/cli.js",
-    "prepare": "npm run build",
+    "build": "esbuild src/cli.ts --bundle --packages=external --platform=node --format=esm --outfile=dist/cli.js && node -e \"require('fs').chmodSync('dist/cli.js',0o755)\"",
     "prepublishOnly": "npm run build",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit",
+    "eval": "bun evals/score.ts",
     "dev": "bun src/cli.ts"
   },
   "dependencies": {

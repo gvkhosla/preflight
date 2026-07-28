@@ -73,11 +73,13 @@ export interface AnalysisResult {
 export interface ContextPack {
   intentHints: string;
   recall: string;
+  codeContext: string;
 }
 
 function contextBlock(ctx: ContextPack): string {
   return [
     ctx.intentHints.trim() && `## Intent hints (from git/branch)\n${ctx.intentHints.trim()}`,
+    ctx.codeContext.trim() && `## Code context (symbols, related tests, file windows)\n${ctx.codeContext.trim()}`,
     ctx.recall.trim() && `## Precedent from local memory (pickbrain)\n${ctx.recall.trim()}`,
   ]
     .filter(Boolean)
@@ -92,6 +94,8 @@ export function judgePrompt(annotatedDiff: string, ctx: ContextPack): string {
 Do NOT write a walkthrough or tutorial. Find real ship risks in the diff. Prefer silence over invented issues.
 
 Each hunk is labeled "hunk hN". Lines look like "42|+code" (new file line) or "-17|-code" (deleted old line).
+
+Use code context (symbols, related tests, file windows) to judge completeness and regressions — e.g. missing tests for new branches, broken callers, API shape drift.
 
 ${ctxText ? ctxText + "\n\n" : ""}Return ONLY a JSON object:
 {
@@ -122,6 +126,7 @@ Rules:
 - Every finding needs concrete where + action.
 - hunk_id/from/to must point at real diff lines when possible; else nulls.
 - Do NOT invent bugs. If unsure, omit or ask a question.
+- If related tests do not cover a new risky branch, prefer kind missing-test.
 - If precedent memory shows a past incident that matches, cite it in why.
 - No markdown fences, no commentary, JSON only.
 
@@ -168,11 +173,6 @@ The diff:
 ${annotatedDiff}`;
 }
 
-/** @deprecated kept for simple single-pass fallback tests */
-export function analysisPrompt(annotatedDiff: string, ctx: ContextPack): string {
-  return judgePrompt(annotatedDiff, ctx);
-}
-
 export function extractJsonObject(raw: string): unknown {
   let text = raw.trim();
   const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -195,7 +195,6 @@ export function extractExplain(raw: string): ExplainResult {
 }
 
 export function extractAnalysis(raw: string): Analysis {
-  // Back-compat: full analysis or judge-only payloads.
   const obj = extractJsonObject(raw) as Record<string, unknown>;
   if (obj.findings && !obj.title) {
     const judge = JudgeSchema.parse(obj);

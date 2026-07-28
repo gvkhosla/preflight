@@ -1,0 +1,12 @@
+diff --git a/src/utils/format.ts b/src/utils/format.ts
+similarity index 92%
+rename from src/utils/format.ts
+rename to src/utils/formatting.ts
+index 1111111..2222222 100644
+--- a/src/utils/format.ts
++++ b/src/utils/formatting.ts
+@@ -1,3 +1,3 @@
+-export function formatName(name: string) {
++export function formatName(name: string) {
+   return name.trim();
+ }

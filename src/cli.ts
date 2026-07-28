@@ -8,13 +8,19 @@ import { runPipeline } from "./pipeline";
 import { renderReport } from "./render";
 import { serveReview } from "./server";
 import { gatherIntentHints } from "./intent";
+import { gatherCodeContext } from "./context";
 import { gatherRecall } from "./recall";
 import { buildVerdict, formatVerdictJson, formatVerdictText } from "./verdict";
+import { runDoctor } from "./doctor";
+import { VERSION } from "./version";
 import { run } from "./proc";
 
 const USAGE = `usage: preflight [options] [git diff args...]
+       preflight doctor
+       preflight --version
 
-Local ship gate: multi-judge findings, grounded against the diff, one verdict.
+Local ship gate for agent-built software.
+After your coding agent finishes, run preflight for a ship verdict.
 
 Reads diff from stdin if piped, otherwise runs \`git diff <args>\`
 (default: git diff HEAD). Prints verdict to stdout.
@@ -28,14 +34,17 @@ options:
   --effort <level>       low|medium|high|xhigh|max (anthropic)
   --no-open              don't open the browser
   --no-recall            skip pickbrain memory
+  --version              print version
+  doctor                 check git/backends/memory readiness
   -h, --help             show help
 
 examples:
   preflight                         review uncommitted changes
   preflight --strict                two-judge merge when possible
   preflight --json --auto --strict  agent mode, higher judgment bar
-  preflight --with anthropic,codex  explicit judges
-  git diff -U10 | preflight         piped diff
+  preflight main...HEAD
+  git diff -U10 | preflight
+  preflight doctor
 `;
 
 async function getDiff(gitArgs: string[]): Promise<string> {
@@ -52,6 +61,10 @@ async function getDiff(gitArgs: string[]): Promise<string> {
 
 async function main() {
   const argv = process.argv.slice(2);
+  if (argv[0] === "doctor") {
+    process.exit(await runDoctor());
+  }
+
   const gitArgs: string[] = [];
   let withBackends: string[] | null = null;
   let openBrowser = true;
@@ -65,6 +78,9 @@ async function main() {
     const arg = argv[i];
     if (arg === "-h" || arg === "--help") {
       console.log(USAGE);
+      return;
+    } else if (arg === "-V" || arg === "--version") {
+      console.log(`preflight ${VERSION}`);
       return;
     } else if (arg === "--no-open") {
       openBrowser = false;
@@ -101,6 +117,8 @@ async function main() {
 
   console.error(`preflight: packing context for ${hunkCount} hunks across ${files.length} files…`);
   const intentHints = await gatherIntentHints(gitArgs, files);
+  const codeContext = await gatherCodeContext(files);
+  if (codeContext) console.error("preflight: code context attached (symbols/tests/files)");
   const recall = await gatherRecall(intentHints, files);
   if (recall) console.error("preflight: pickbrain memory attached");
   else console.error("preflight: no pickbrain recall (optional)");
@@ -112,11 +130,18 @@ async function main() {
   const explainer = judges[0];
 
   const annotated = diffForModel(files);
-  const result = await runPipeline(judges, explainer, annotated, files, { intentHints, recall }, { model, effort });
+  const result = await runPipeline(
+    judges,
+    explainer,
+    annotated,
+    files,
+    { intentHints, recall, codeContext },
+    { model, effort },
+  );
 
   let decision = undefined;
   if (!auto) {
-    const html = await renderReport([result], files, !!recall);
+    const html = await renderReport(result, files, !!recall);
     decision = await serveReview(html, openBrowser);
   }
 

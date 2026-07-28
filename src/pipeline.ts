@@ -1,7 +1,6 @@
 import {
   findingsSummaryForExplain,
   type Analysis,
-  type AnalysisResult,
   type ContextPack,
   type Finding,
 } from "./analysis";
@@ -10,7 +9,11 @@ import type { DiffFile } from "./diff";
 import { groundFindings } from "./ground";
 import { mergeJudgeBundles, type MergedFinding } from "./merge";
 
-export interface PipelineResult extends AnalysisResult {
+export interface PipelineResult {
+  backend: string;
+  analysis: Analysis;
+  judges: string[];
+  agreementSummary: string;
   mergedFindings: MergedFinding[];
 }
 
@@ -84,12 +87,6 @@ export async function runPipeline(
     findings: merged.findings.map(stripMerged),
     questions: merged.questions,
   };
-
-  // Attach agreement into why for UI visibility without schema churn in render.
-  analysis.findings = merged.findings.map((f) => ({
-    ...stripMerged(f),
-    why: f.agreement !== "1/1" ? `${f.why} [${f.agreement} judges, ${f.confidence}]` : f.why,
-  }));
 
   return {
     backend: judges.map((j) => j.name).join("+"),
