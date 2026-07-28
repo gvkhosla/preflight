@@ -19,10 +19,10 @@ diff + intent + optional pickbrain
 
 ```sh
 # npm
-npm install -g @gvkhosla/preflight
+npm install -g @khosla/preflight
 
 # bun
-bun install -g @gvkhosla/preflight
+bun install -g @khosla/preflight
 
 # from GitHub
 bun install -g github:gvkhosla/preflight

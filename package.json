@@ -1,5 +1,5 @@
 {
-  "name": "@gvkhosla/preflight",
+  "name": "@khosla/preflight",
   "version": "0.1.0",
   "publishConfig": {
     "access": "public"
