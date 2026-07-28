@@ -13,7 +13,8 @@ import { deltaPromptAddon, hashDiff, loadDeltaState, saveDeltaState } from "./de
 import { buildVerdict, formatVerdictJson, formatVerdictText } from "./verdict";
 import { runDoctor } from "./doctor";
 import { VERSION } from "./version";
-import { run } from "./proc";
+import { captureGitChange } from "./change";
+import type { VerifyResult } from "./verify";
 
 const USAGE = `usage: preflight [options] [git diff args...]
        preflight doctor
@@ -35,7 +36,7 @@ options:
   --effort <level>       low|medium|high|xhigh|max (anthropic API only)
   --no-open              don't open the browser
   --no-recall            skip pickbrain memory
-  --no-verify            skip local typecheck/related tests
+  --no-verify            skip repository-native checks
   --no-delta             ignore previous .preflight/last-verdict.json
   --version              print version
   doctor                 check git/backends/memory readiness
@@ -50,16 +51,13 @@ examples:
   git diff -U10 | preflight
 `;
 
-async function getDiff(gitArgs: string[]): Promise<string> {
+async function getChange(gitArgs: string[]): Promise<{ diff: string; warnings: string[]; untrackedFiles: string[] }> {
   if (!process.stdin.isTTY) {
     let piped = "";
     for await (const chunk of process.stdin.setEncoding("utf8")) piped += chunk;
-    if (piped.trim()) return piped;
+    if (piped.trim()) return { diff: piped, warnings: [], untrackedFiles: [] };
   }
-  const args = gitArgs.length > 0 ? gitArgs : ["HEAD"];
-  const { stdout, stderr, code } = await run(["git", "diff", "--no-color", ...args]);
-  if (code !== 0) throw new Error(`git diff failed: ${stderr.trim()}`);
-  return stdout;
+  return captureGitChange(gitArgs);
 }
 
 async function main() {
@@ -118,13 +116,18 @@ async function main() {
     }
   }
 
-  const diff = await getDiff(gitArgs);
+  const change = await getChange(gitArgs);
+  const diff = change.diff;
   const files = parseDiff(diff);
   const hunkCount = files.reduce((n, f) => n + f.hunks.length, 0);
-  if (hunkCount === 0) {
+  if (files.length === 0) {
     console.error("preflight: no changes to review");
     process.exit(1);
   }
+  if (change.untrackedFiles.length) {
+    console.error(`preflight: included ${change.untrackedFiles.length} untracked file(s)`);
+  }
+  for (const warning of change.warnings) console.error(`preflight: warning — ${warning}`);
 
   // Auto-strict when 2+ backends available (unless --no-strict or explicit single --with).
   let useStrict = strict === true || (withBackends != null && withBackends.length > 1);
@@ -144,11 +147,12 @@ async function main() {
   if (codeContext) console.error("preflight: code context attached (symbols/tests/files)");
 
   let verifyText = "";
+  let verification: VerifyResult | undefined;
   if (verify) {
-    console.error("preflight: running local verifiers…");
-    const v = await runVerifiers(files);
-    verifyText = formatVerifyForPrompt(v);
-    console.error(`preflight: verify — ${v.summary}`);
+    console.error("preflight: discovering repository-native checks…");
+    verification = await runVerifiers(files);
+    verifyText = formatVerifyForPrompt(verification);
+    console.error(`preflight: verify ${verification.status} — ${verification.summary}`);
   }
 
   const prev = delta ? await loadDeltaState() : null;
@@ -174,6 +178,8 @@ async function main() {
     { intentHints, recall, codeContext, verify: verifyText, delta: deltaText },
     { model, effort },
   );
+  result.verification = verification;
+  result.previousVerdict = prev?.verdict;
 
   let decision = undefined;
   if (!auto) {
@@ -186,6 +192,8 @@ async function main() {
     judges: result.judges,
     agreementSummary: result.agreementSummary,
     merged: result.mergedFindings,
+    verification,
+    previousVerdict: prev?.verdict,
   });
 
   if (delta) {

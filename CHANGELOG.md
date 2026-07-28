@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+- Evidence Gate v1: repository-native typecheck, lint, test, and build discovery
+- Language checks for Cargo, Go, and pytest projects
+- Authoritative verification failures that models and UI approval cannot override
+- Complete default working-tree capture, including untracked files without index mutation
+- Finding lifecycle across reruns: new, persisting, and resolved
+- Structured verification evidence in browser, text, and JSON verdicts
+- Per-command timeouts and duration/output reporting
+
 ## 0.1.7
 
 - Cohesive visual redesign across landing page, review UI, generated reports, and social image

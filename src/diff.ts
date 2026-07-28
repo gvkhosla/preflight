@@ -87,7 +87,11 @@ export function diffForModel(files: DiffFile[]): string {
   const parts: string[] = [];
   for (const file of files) {
     if (file.status === "binary") {
-      parts.push(`### ${file.path} (binary, ${file.status})`);
+      parts.push(`### ${file.path} (binary)`);
+      continue;
+    }
+    if (file.hunks.length === 0) {
+      parts.push(`### ${file.path} (${file.status}; no textual hunks)`);
       continue;
     }
     for (const hunk of file.hunks) {

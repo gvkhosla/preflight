@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { Analysis } from "../src/analysis";
-import { buildVerdict, formatVerdictJson, formatVerdictText } from "../src/verdict";
+import { buildVerdict, classifyFindingLifecycle, formatVerdictJson, formatVerdictText } from "../src/verdict";
 
 const base: Analysis = {
   title: "Safer greet",
@@ -63,6 +63,48 @@ describe("buildVerdict", () => {
     expect(v.status).toBe("approved");
     expect(formatVerdictText(v)).toContain("APPROVED");
     expect(formatVerdictText(v)).not.toContain("F1 [");
+  });
+
+  test("repository check failures are authoritative over human approval", () => {
+    const v = buildVerdict(
+      { ...base, findings: [] },
+      "test",
+      { findingDecisions: {}, humanNotes: "", forceStatus: "approved" },
+      {
+        verification: {
+          status: "failed",
+          summary: "1 check failed.",
+          details: [],
+          failedChecks: ["package:.:test"],
+          checks: [
+            {
+              id: "package:.:test",
+              name: "test",
+              command: ["npm", "test"],
+              cwd: ".",
+              source: "package-script",
+              status: "failed",
+              exitCode: 1,
+            },
+          ],
+        },
+      },
+    );
+    expect(v.status).toBe("changes_requested");
+  });
+
+  test("classifies persisting, new, and resolved findings", () => {
+    const prior = buildVerdict({ ...base, findings: [base.findings[0]] }, "test");
+    const current = [
+      { ...base.findings[0], title: "Throws uncaught in API", where: "src/greet.ts:3" },
+      { ...base.findings[0], id: "F2", title: "New regression", where: "src/other.ts:4" },
+    ];
+    const classified = classifyFindingLifecycle(current, prior);
+    expect(classified.lifecycle.map((item) => item.state)).toEqual(["persisting", "new"]);
+    expect(classified.resolved).toHaveLength(0);
+
+    const resolved = classifyFindingLifecycle([], prior);
+    expect(resolved.resolved[0].title).toBe("Throws uncaught");
   });
 
   test("json includes agreement metadata when provided", () => {

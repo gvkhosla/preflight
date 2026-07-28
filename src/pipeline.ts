@@ -8,6 +8,8 @@ import type { AnalyzeOpts, Backend } from "./backends";
 import type { DiffFile } from "./diff";
 import { groundFindings } from "./ground";
 import { mergeJudgeBundles, type MergedFinding } from "./merge";
+import type { VerifyResult } from "./verify";
+import type { Verdict } from "./verdict";
 
 export interface PipelineResult {
   backend: string;
@@ -15,6 +17,8 @@ export interface PipelineResult {
   judges: string[];
   agreementSummary: string;
   mergedFindings: MergedFinding[];
+  verification?: VerifyResult;
+  previousVerdict?: Verdict;
 }
 
 function stripMerged(f: MergedFinding): Finding {

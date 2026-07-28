@@ -46,11 +46,16 @@ preflight
 
 ## What it does
 
-1. Reads your git diff (or stdin)
-2. Packs local context (intent, symbols/tests, optional verify + memory)
-3. Judges with your agent CLI (multi-judge when 2+ CLIs available)
-4. Opens a review UI **or** prints JSON for agents
-5. Returns approve / changes-requested
+1. Captures staged, unstaged, and untracked changes (or reads a diff from stdin)
+2. Discovers and runs repository-native checks: typecheck, lint, test, build, Cargo, Go, or pytest
+3. Packs local context: intent, symbols, related tests, file windows, prior findings, and optional memory
+4. Judges with your agent CLI (multi-judge when 2+ CLIs are available)
+5. Grounds findings against real files, hunks, and lines
+6. Opens a review UI **or** prints structured JSON for agents
+7. Tracks findings as `new`, `persisting`, or `resolved` on the next run
+8. Returns approve / changes-requested
+
+Repository check failures are authoritative: a model or UI approval cannot override them.
 
 ## Agent snippet
 
@@ -68,8 +73,10 @@ After a non-trivial change, run:
 | `--json --auto` | Headless agent mode |
 | `--strict` / `--no-strict` | Force / disable multi-judge |
 | `--with pi,codex` | Choose backends |
-| `--no-verify` | Skip local tsc/tests |
+| `--no-verify` | Skip repository-native checks |
 | `--no-delta` | Ignore prior review state |
+
+Verification commands time out after 90 seconds by default. Override with `PREFLIGHT_VERIFY_TIMEOUT_MS`.
 
 ## Links
 

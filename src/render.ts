@@ -2,6 +2,7 @@ import type { DiffFile, Hunk } from "./diff";
 import { hunkById } from "./diff";
 import type { MergedFinding } from "./merge";
 import type { PipelineResult } from "./pipeline";
+import { classifyFindingLifecycle } from "./verdict";
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -85,9 +86,12 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
   const blockers = merged.filter((f) => f.severity === "blocker").length;
   const should = merged.filter((f) => f.severity === "should-fix").length;
   const nits = merged.filter((f) => f.severity === "nit").length;
-  const suggested = blockers + should > 0 ? "changes_requested" : "approved";
-  const statusPill =
-    suggested === "approved"
+  const verification = result.verification;
+  const verificationFailed = verification?.status === "failed";
+  const suggested = blockers + should > 0 || verificationFailed ? "changes_requested" : "approved";
+  const statusPill = verificationFailed
+    ? "verification failed"
+    : suggested === "approved"
       ? "ready"
       : [
           blockers ? `${blockers} blocker${blockers === 1 ? "" : "s"}` : "",
@@ -103,6 +107,26 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
     return n > 1 ? `${n}j` : "";
   })();
   const backendPill = [backend, agreeShort].filter(Boolean).join(" · ");
+  const lifecycle = classifyFindingLifecycle(analysis.findings, result.previousVerdict);
+  const lifecycleById = new Map(analysis.findings.map((finding, index) => [finding.id, lifecycle.lifecycle[index]]));
+  const resolvedBlock = lifecycle.resolved.length
+    ? `<section class="resolved"><p class="verification-label">Since last run</p><h2>${lifecycle.resolved.length} resolved</h2><ul>${lifecycle.resolved.map((finding) => `<li><span>${esc(finding.previousId)}</span>${esc(finding.title)}</li>`).join("")}</ul></section>`
+    : "";
+  const verificationBlock = verification
+    ? `<section class="verification verification-${esc(verification.status)}">
+        <div class="verification-head">
+          <div><p class="verification-label">Evidence</p><h2>Repository checks</h2></div>
+          <span class="verify-status">${esc(verification.status)}</span>
+        </div>
+        <p class="verification-summary">${esc(verification.summary)}</p>
+        <div class="verification-checks">${verification.checks.length
+          ? verification.checks.map((check) => `<details class="verification-check"${check.status === "failed" ? " open" : ""}>
+              <summary><span>${esc(check.name)}</span><span class="check-result check-${esc(check.status ?? "skipped")}">${esc(check.status ?? "skipped")}${check.durationMs != null ? ` · ${(check.durationMs / 1000).toFixed(1)}s` : ""}</span></summary>
+              <pre>$ ${esc(check.command.join(" "))}${check.output ? `\n\n${esc(check.output.slice(0, 2400))}` : ""}</pre>
+            </details>`).join("")
+          : `<p class="muted">No runnable checks discovered.</p>`}</div>
+      </section>`
+    : "";
 
   // Pre-render pierre diffs (parallel).
   const sectionBlocks = await Promise.all(
@@ -142,6 +166,7 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
               snippet = await renderPierreDiff(found.file.path, oldContents, newContents);
             }
             const judges = f.judges?.length ? f.judges.join(", ") : "";
+            const findingLifecycle = lifecycleById.get(f.id);
             return `<article class="finding sev-${esc(f.severity)}" data-id="${esc(f.id)}" data-severity="${esc(f.severity)}">
             <header class="finding-head">
               <div class="finding-tags">
@@ -149,6 +174,7 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
                 <span class="kind">${esc(f.kind)}</span>
                 <span class="agree-pill" title="Judge agreement">${esc(f.agreement)} agree</span>
                 <span class="conf-pill ${confClass(f.confidence)}">${esc(f.confidence)} confidence</span>
+                ${findingLifecycle ? `<span class="lifecycle lifecycle-${findingLifecycle.state}">${esc(findingLifecycle.state)}</span>` : ""}
               </div>
               <h3>${esc(f.id)} · ${esc(f.title)}</h3>
             </header>
@@ -446,10 +472,80 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
     color: var(--muted);
   }
 
+  .verification {
+    margin-bottom: 42px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-recessed);
+    overflow: hidden;
+  }
+  .verification-failed { border-color: rgba(255, 123, 127, 0.28); }
+  .verification-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid var(--line);
+    padding: 14px 16px;
+  }
+  .verification-label { margin: 0; color: var(--dim); font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .verification-head h2 { margin: 2px 0 0; font-size: 0.9rem; font-weight: 560; }
+  .verify-status {
+    margin-left: auto;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 3px 7px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+  }
+  .verification-failed .verify-status { border-color: rgba(255, 123, 127, 0.25); color: var(--danger); }
+  .verification-passed .verify-status { border-color: rgba(157, 232, 191, 0.24); color: var(--signal); }
+  .verification-summary { margin: 0; padding: 14px 16px; color: var(--ink-soft); font-size: 0.9rem; }
+  .verification-checks { border-top: 1px solid var(--line); }
+  .verification-check { border-bottom: 1px solid var(--line); }
+  .verification-check:last-child { border-bottom: 0; }
+  .verification-check summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 16px;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  .verification-check summary::-webkit-details-marker { display: none; }
+  .check-result { margin-left: auto; color: var(--muted); font-family: var(--mono); font-size: 0.68rem; }
+  .check-failed { color: var(--danger); }
+  .check-passed { color: var(--signal); }
+  .verification-check pre {
+    margin: 0;
+    overflow: auto;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    padding: 14px 16px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  .resolved {
+    margin-bottom: 42px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 18px 0;
+  }
+  .resolved h2 { margin: 4px 0 0; font-size: 1rem; font-weight: 560; }
+  .resolved ul { margin: 14px 0 0; padding: 0; list-style: none; }
+  .resolved li { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 7px 0; color: var(--muted); font-size: 0.84rem; }
+  .resolved li span { color: var(--signal); font-family: var(--mono); font-size: 0.7rem; }
+
   .finding { padding: clamp(22px, 4vw, 34px) 0; border-bottom: 1px solid var(--line); }
   .finding-head { display: grid; gap: 16px; }
   .finding-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .badge, .kind, .agree-pill, .conf-pill {
+  .badge, .kind, .agree-pill, .conf-pill, .lifecycle {
     display: inline-flex;
     min-height: 24px;
     align-items: center;
@@ -470,6 +566,8 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
   .sev-nit .badge { color: var(--muted); }
   .conf-high { border-color: rgba(157, 232, 191, 0.24); color: var(--signal); }
   .conf-med { border-color: rgba(233, 182, 94, 0.24); color: var(--warning); }
+  .lifecycle-new { color: var(--signal); }
+  .lifecycle-persisting { color: var(--warning); }
   .finding h3 {
     max-width: 28ch;
     margin: 0;
@@ -662,11 +760,13 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
     <dl class="summary-meta">
       <div><dt>Findings</dt><dd>${merged.length}</dd></div>
       <div><dt>Judges</dt><dd>${result.judges?.length || 1}</dd></div>
-      <div><dt>Recall</dt><dd>${recallUsed ? "on" : "off"}</dd></div>
+      <div><dt>Verify</dt><dd>${verification?.status ?? "off"}</dd></div>
     </dl>
   </aside>
 
   <div class="review-content">
+    ${verificationBlock}
+    ${resolvedBlock}
     <section class="findings">
       <div class="section-title"><h2>Findings</h2><span class="section-count">${String(merged.length).padStart(2, "0")} total</span></div>
       ${findingBlocks}
@@ -682,8 +782,8 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
     <div class="btns">
       <span class="hint" id="hint"></span>
       <button class="secondary" id="raw" type="button">Request changes</button>
-      <button class="good" id="approve" type="button">Looks good</button>
-      <button class="secondary" id="force" type="button" hidden>Approve anyway</button>
+      ${verificationFailed ? "" : `<button class="good" id="approve" type="button">Looks good</button>
+      <button class="secondary" id="force" type="button" hidden>Approve anyway</button>`}
     </div>
   </div>
 </footer>
@@ -702,18 +802,23 @@ function openBlockers() {
     return status === "accepted";
   }).length;
 }
+const verificationFailed = ${verificationFailed};
 function refreshApproveState() {
   const n = openBlockers();
   const approve = document.getElementById("approve");
   const force = document.getElementById("force");
   const hint = document.getElementById("hint");
+  if (verificationFailed) {
+    hint.textContent = "Repository checks must pass before approval.";
+    return;
+  }
   if (n > 0) {
-    approve.hidden = true;
-    force.hidden = false;
+    if (approve) approve.hidden = true;
+    if (force) force.hidden = false;
     hint.textContent = n + " actionable finding" + (n === 1 ? " remains." : "s remain.");
   } else {
-    approve.hidden = false;
-    force.hidden = true;
+    if (approve) approve.hidden = false;
+    if (force) force.hidden = true;
     hint.textContent = "All actionable findings are dismissed.";
   }
 }
@@ -739,9 +844,9 @@ async function submit(forceStatus) {
   document.getElementById("bar").style.display = "none";
   document.getElementById("done-view").style.display = "block";
 }
-document.getElementById("approve").addEventListener("click", () => submit("approved"));
-document.getElementById("force").addEventListener("click", () => submit("approved"));
-document.getElementById("raw").addEventListener("click", () => submit("changes_requested"));
+document.getElementById("approve")?.addEventListener("click", () => submit("approved"));
+document.getElementById("force")?.addEventListener("click", () => submit("approved"));
+document.getElementById("raw")?.addEventListener("click", () => submit("changes_requested"));
 </script>
 </body>
 </html>`;
