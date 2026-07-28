@@ -124,6 +124,7 @@ diff + intent + symbols/tests + verify + delta + optional pickbrain
 | **Delta** | Re-reviews with prior open findings in mind |
 | **Judge / ground / merge** | Findings only, anchored to real hunks |
 | **Explain** | Short human walkthrough |
+| **Diff UI** | [`@pierre/diffs`](https://diffs.com) stacked render (Shiki themes) |
 
 ---
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+- Review UI redesigned: Inter + IBM Plex Mono, Diffs.com-inspired minimal dark chrome
+- Diff snippets rendered with `@pierre/diffs` (SSR stacked/unified + Shiki themes)
+- Demo/OG visuals refreshed to match
+
 ## 0.1.2
 
 ### Product quality

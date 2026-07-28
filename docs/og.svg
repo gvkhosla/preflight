@@ -1,16 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0c0a09"/>
-      <stop offset="100%" stop-color="#1c1917"/>
-    </linearGradient>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect x="64" y="64" width="1072" height="502" rx="28" fill="#292524" stroke="#44403c" stroke-width="2"/>
-  <text x="100" y="160" fill="#a8a29e" font-family="ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="600" letter-spacing="4">PREFLIGHT</text>
-  <text x="100" y="250" fill="#fafaf9" font-family="ui-serif, Georgia, serif" font-size="64" font-weight="600">Ship what you meant</text>
-  <text x="100" y="320" fill="#fafaf9" font-family="ui-serif, Georgia, serif" font-size="64" font-weight="600">to ship.</text>
-  <text x="100" y="400" fill="#d6d3d1" font-family="ui-sans-serif, system-ui, sans-serif" font-size="28">Multi-judge findings · grounded diffs · executable verdicts</text>
-  <rect x="100" y="450" width="420" height="64" rx="14" fill="#4f46e5"/>
-  <text x="130" y="492" fill="#fff" font-family="ui-monospace, Menlo, monospace" font-size="26">npm i -g @khosla/preflight</text>
+  <rect width="1200" height="630" fill="#050505"/>
+  <rect x="48" y="48" width="1104" height="534" rx="24" fill="#0c0c0c" stroke="#1e1e1e"/>
+  <text x="96" y="150" fill="#8a8a8a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="6">PREFLIGHT</text>
+  <text x="96" y="250" fill="#ededed" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="64" font-weight="600" letter-spacing="-1.5">Ship what you meant</text>
+  <text x="96" y="322" fill="#ededed" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="64" font-weight="600" letter-spacing="-1.5">to ship.</text>
+  <text x="96" y="400" fill="#8a8a8a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="24">Multi-judge findings · @pierre/diffs · executable verdicts</text>
+  <rect x="96" y="460" width="460" height="58" rx="29" fill="#ededed"/>
+  <text x="128" y="497" fill="#050505" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="22" font-weight="500">npm i -g @khosla/preflight</text>
 </svg>
