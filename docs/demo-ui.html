@@ -1,195 +1,299 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scheme-only-dark">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>preflight — UI mock</title>
-<meta name="theme-color" content="#000000"/>
+<meta name="theme-color" content="#080908"/>
+<title>Reject blank greet names — preflight</title>
 <link rel="stylesheet" href="site.css"/>
 <style>
-  header.app {
-    position: sticky; top: 0; z-index: 20;
+  body { min-height: 100svh; }
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     border-bottom: 1px solid var(--line);
-    background: rgba(0,0,0,.9);
+    background: rgba(8, 9, 8, 0.94);
     backdrop-filter: blur(16px);
-    padding: 12px var(--pad);
-    padding-top: max(12px, env(safe-area-inset-top));
   }
-  .app-row {
-    display: flex;
+  .app-header-inner {
+    display: grid;
+    max-width: var(--page);
+    min-height: 62px;
     align-items: center;
     gap: 10px;
-    min-width: 0;
-  }
-  .brand {
-    flex: 0 0 auto;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .title {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: -.02em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .pills .pill { max-width: none; }
-
-  main {
-    max-width: var(--max);
     margin: 0 auto;
-    padding: 18px var(--pad) 140px;
+    padding: max(10px, env(safe-area-inset-top)) var(--pad) 10px;
   }
-  h2 {
-    margin: 22px 0 10px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--faint);
+  .app-identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 13px;
   }
-  h3 {
-    margin: 0 0 8px;
-    font-size: 15px;
-    letter-spacing: -.02em;
-    font-weight: 600;
-  }
-  .finding { margin-bottom: 12px; }
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-  .badge {
-    font-size: 11px; font-weight: 600; text-transform: uppercase;
-    padding: 3px 8px; border-radius: 999px; background: var(--warn); color: #111;
-  }
-  .tag {
-    font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
-    border: 1px solid var(--line); color: var(--muted);
-  }
-  .tag.ok { color: var(--good); border-color: #1d4d36; }
-  .where { font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 0 0 8px; word-break: break-all; }
-  .muted { color: var(--muted); }
-  .fix {
-    font-size: 11px; font-weight: 600; letter-spacing: .04em;
-    text-transform: uppercase; color: var(--text); margin-right: 6px;
-  }
-
-  .diff {
-    border: 1px solid var(--line);
-    border-radius: 12px;
+  .app-title {
+    min-width: 0;
     overflow: hidden;
-    margin-top: 12px;
-    background: #0a0a0a;
-  }
-  .diff-head {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--line);
-    font: 12px var(--mono);
-    color: var(--muted);
-    overflow: hidden;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    font-weight: 480;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .diff-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  pre {
-    margin: 0;
-    padding: 0;
-    font: 12px/1.55 var(--mono);
-    min-width: min-content;
-  }
-  .row { display: grid; grid-template-columns: 40px 1fr; }
-  .ln { color: #444; text-align: right; padding: 0 8px; user-select: none; }
-  .code { padding: 0 12px 0 4px; white-space: pre; }
-  .del { background: rgba(242,85,90,.08); }
-  .del .code { color: #f5a8aa; }
-  .add { background: rgba(62,207,142,.08); }
-  .add .code { color: #9aefc4; }
+  .app-title::before { margin-right: 13px; color: var(--dim); content: "/"; }
+  .app-statuses { display: flex; min-width: 0; flex-wrap: wrap; gap: 6px; }
 
-  footer.bar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  .review {
+    display: grid;
+    max-width: var(--page);
+    margin: 0 auto;
+    padding: clamp(28px, 5vw, 56px) var(--pad) 190px;
+    gap: clamp(32px, 5vw, 64px);
+  }
+  .summary { min-width: 0; }
+  .summary h1 {
+    max-width: 17ch;
+    margin: 16px 0 0;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 560;
+    letter-spacing: -0.048em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+  .summary-copy {
+    max-width: 42ch;
+    margin: 20px 0 0;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+  }
+  .intent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    margin: 18px 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .intent strong {
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .review-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 28px;
     border-top: 1px solid var(--line);
-    background: rgba(0,0,0,.92);
-    backdrop-filter: blur(16px);
-    padding: 12px var(--pad);
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    border-bottom: 1px solid var(--line);
   }
-  .bar-inner {
-    max-width: var(--max);
-    margin: 0 auto;
-    display: flex;
-    gap: 8px;
-    justify-content: stretch;
+  .review-meta > div { padding: 14px 12px 14px 0; }
+  .review-meta > div + div { border-left: 1px solid var(--line); padding-left: 12px; }
+  .review-meta dt {
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
-  .bar-inner .btn { flex: 1; }
+  .review-meta dd {
+    margin: 4px 0 0;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
 
-  @media (min-width: 641px) {
-    .bar-inner { justify-content: flex-end; }
-    .bar-inner .btn { flex: 0 0 auto; min-width: 140px; }
-    .pills { margin-top: 0; margin-left: auto; flex-wrap: nowrap; }
-    header.app .app-row { gap: 12px; }
-    .title { font-size: 15px; }
+  .findings { min-width: 0; }
+  .findings-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px;
+  }
+  .findings-heading h2 {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 560;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  .findings-count { color: var(--dim); font-family: var(--mono); font-size: 0.68rem; }
+  .finding { padding: clamp(22px, 4vw, 34px) 0; }
+  .finding-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .finding h3 {
+    max-width: 28ch;
+    margin: 16px 0 0;
+    font-size: clamp(1.35rem, 3vw, 1.8rem);
+    font-weight: 560;
+    letter-spacing: -0.035em;
+    line-height: 1.14;
+    text-wrap: balance;
+  }
+  .where { margin: 10px 0 0; color: var(--dim); font-family: var(--mono); font-size: 0.72rem; }
+  .why { max-width: 58ch; margin: 18px 0 0; color: var(--ink-soft); text-wrap: pretty; }
+  .fix {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    margin: 13px 0 22px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .fix strong {
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .finding-decision {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  .segments { display: flex; gap: 6px; }
+  .segment { cursor: pointer; }
+  .segment input { position: absolute; opacity: 0; pointer-events: none; }
+  .segment span {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: var(--muted);
+    font-size: 0.76rem;
+  }
+  .segment input:checked + span {
+    border-color: var(--line-strong);
+    background: rgba(244, 243, 238, 0.06);
+    color: var(--ink);
+  }
+  .finding-note {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    outline: 0;
+    background: var(--surface-recessed);
+    padding: 9px 11px;
+    color: var(--ink);
+    font-size: 1rem;
+  }
+  .finding-note::placeholder { color: var(--dim); }
+  .finding-note:focus { border-color: rgba(157, 232, 191, 0.45); outline: 2px solid rgba(157, 232, 191, 0.12); outline-offset: 0; }
+
+  .action-bar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    border-top: 1px solid var(--line);
+    background: rgba(8, 9, 8, 0.95);
+    backdrop-filter: blur(16px);
+  }
+  .action-inner {
+    display: grid;
+    max-width: var(--page);
+    gap: 10px;
+    margin: 0 auto;
+    padding: 12px var(--pad) max(12px, env(safe-area-inset-bottom));
+  }
+  .action-hint { margin: 0; color: var(--muted); font-size: 0.78rem; }
+  .action-buttons { display: flex; gap: 8px; }
+  .action-buttons .button { flex: 1; }
+
+  @media (min-width: 760px) {
+    .app-header-inner { grid-template-columns: minmax(0, 1fr) auto; }
+    .app-statuses { justify-content: flex-end; }
+    .review { grid-template-columns: minmax(230px, 3fr) minmax(0, 7fr); }
+    .summary { position: sticky; top: 94px; align-self: start; }
+    .finding-decision { grid-template-columns: auto minmax(180px, 1fr); align-items: center; }
+    .action-inner { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+    .action-buttons .button { min-width: 146px; flex: 0 0 auto; }
   }
 </style>
 </head>
 <body>
-<header class="app">
-  <div class="app-row">
-    <span class="brand">preflight</span>
-    <h1 class="title">Reject blank greet names</h1>
-  </div>
-  <div class="pills">
-    <span class="pill bad">1 should-fix</span>
-    <span class="pill">pi · 1/1</span>
+<header class="app-header">
+  <div class="app-header-inner">
+    <div class="app-identity">
+      <a class="wordmark" href="./" aria-label="Preflight homepage"><span class="wordmark-mark" aria-hidden="true"></span><span>preflight</span></a>
+      <span class="app-title">Reject blank greet names</span>
+    </div>
+    <div class="app-statuses">
+      <span class="status status-blocked">changes requested</span>
+      <span class="status status-neutral">pi · 1 judge</span>
+    </div>
   </div>
 </header>
-<main>
-  <div class="card">
-    <div class="label">What changed</div>
-    <p><code>greet()</code> now throws on blank input instead of returning a hollow hello.</p>
-    <p class="muted" style="margin-top:12px"><strong style="color:var(--text)">Intent</strong> Fail fast on empty names.</p>
-  </div>
 
-  <h2>Findings</h2>
-  <article class="card finding">
-    <div class="tags">
-      <span class="badge">should-fix</span>
-      <span class="tag">1/1</span>
-      <span class="tag ok">high</span>
-    </div>
-    <h3>F1 · No test for blank name</h3>
-    <p class="where">src/greet.ts:2</p>
-    <p>New throw path is untested; regressions will ship silently.</p>
-    <p class="muted"><span class="fix">Fix</span> Add a unit test for blank/whitespace names.</p>
-    <div class="diff">
-      <div class="diff-head">src/greet.ts</div>
-      <div class="diff-scroll">
-        <pre>
-<div class="row del"><span class="ln">2</span><span class="code">-  return "Hello, " + name;</span></div>
-<div class="row add"><span class="ln">2</span><span class="code">+  if (!name.trim()) throw new Error("blank name");</span></div>
-<div class="row add"><span class="ln">3</span><span class="code">+  return `Hello, ${name}`;</span></div>
-        </pre>
+<main class="review">
+  <aside class="summary">
+    <p class="eyebrow">Review complete</p>
+    <h1>Reject blank greet names.</h1>
+    <p class="summary-copy"><code>greet()</code> now throws on blank input instead of returning a hollow hello.</p>
+    <p class="intent"><strong>Intent</strong><span>Fail fast on empty names.</span></p>
+    <dl class="review-meta">
+      <div><dt>Findings</dt><dd>1</dd></div>
+      <div><dt>Verify</dt><dd>pass</dd></div>
+      <div><dt>Recall</dt><dd>off</dd></div>
+    </dl>
+  </aside>
+
+  <section class="findings">
+    <div class="findings-heading"><h2>Findings</h2><span class="findings-count">01 open</span></div>
+    <article class="finding">
+      <div class="finding-meta">
+        <span class="tag tag-strong">should-fix</span>
+        <span class="tag">1/1 agree</span>
+        <span class="tag tag-good">high confidence</span>
       </div>
-    </div>
-  </article>
+      <h3>F1 · No test covers the blank-name path.</h3>
+      <p class="where">src/greet.ts:2</p>
+      <p class="why">The new throw path changes public behavior, but no test protects blank and whitespace-only names.</p>
+      <p class="fix"><strong>Fix</strong><span>Add a focused unit test for blank and whitespace-only names.</span></p>
+
+      <div class="instrument">
+        <div class="instrument-bar">
+          <span class="instrument-title">src/greet.ts</span>
+          <span class="instrument-meta"><span class="stat-delete">−1</span>&nbsp; <span class="stat-add">+2</span></span>
+        </div>
+        <div class="diff-scroll">
+          <div class="diff-code">
+            <div class="diff-row diff-row-delete"><span class="diff-number">2</span><span class="diff-line">-  return "Hello, " + name;</span></div>
+            <div class="diff-row diff-row-add"><span class="diff-number">2</span><span class="diff-line">+  if (!name.trim()) throw new Error("blank name");</span></div>
+            <div class="diff-row diff-row-add"><span class="diff-number">3</span><span class="diff-line">+  return `Hello, ${name}`;</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="finding-decision">
+        <div class="segments" role="group" aria-label="Finding decision">
+          <label class="segment"><input type="radio" name="F1" value="keep" checked/><span>Keep</span></label>
+          <label class="segment"><input type="radio" name="F1" value="dismiss"/><span>Dismiss</span></label>
+        </div>
+        <input class="finding-note" type="text" name="finding-note" aria-label="Note for the agent" placeholder="Note for the agent"/>
+      </div>
+    </article>
+  </section>
 </main>
-<footer class="bar">
-  <div class="bar-inner">
-    <button class="btn ghost" type="button">Request changes</button>
-    <button class="btn primary" type="button">Looks good</button>
+
+<footer class="action-bar">
+  <div class="action-inner">
+    <p class="action-hint">1 actionable finding remains.</p>
+    <div class="action-buttons">
+      <button class="button button-secondary" type="button">Request changes</button>
+      <button class="button button-primary" type="button">Approve anyway</button>
+    </div>
   </div>
 </footer>
 </body>

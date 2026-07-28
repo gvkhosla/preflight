@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7
+
+- Cohesive visual redesign across landing page, review UI, generated reports, and social image
+- Warm-black instrument-panel identity with Geist and Geist Mono
+- Flatter information hierarchy, stronger verdict focus, and refined mobile behavior
+
 ## 0.1.6
 
 - Mobile-first review UI + demo (no header wrap/overflow)

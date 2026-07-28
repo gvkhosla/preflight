@@ -2,65 +2,37 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>og</title>
+<title>preflight</title>
 <link rel="stylesheet" href="fonts.css"/>
 <style>
   * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0; width: 1200px; height: 630px; overflow: hidden; background: #000;
-  }
-  body {
-    font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
-    color: #ededed; -webkit-font-smoothing: antialiased;
-  }
-  .frame {
-    position: relative;
-    width: 1200px; height: 630px;
-    padding: 48px 64px;
-    background:
-      radial-gradient(800px 380px at 88% -5%, rgba(255,255,255,.05), transparent 55%),
-      #000;
-  }
-  .top {
-    position: absolute; top: 48px; left: 64px;
-    display: flex; align-items: center; gap: 12px;
-    color: #8a8a8a; font-size: 22px; font-weight: 500; letter-spacing: -0.02em;
-  }
-  .dot {
-    width: 28px; height: 28px; border-radius: 8px; background: #fff; color: #000;
-    display: grid; place-items: center; font-weight: 700; font-size: 14px;
-  }
-  .copy {
-    position: absolute; left: 64px; top: 190px; right: 64px;
-  }
-  h1 {
-    margin: 0; font-size: 78px; line-height: 0.98; letter-spacing: -0.05em; font-weight: 600;
-  }
-  .sub {
-    margin-top: 20px; color: #888; font-size: 24px; letter-spacing: -0.02em;
-  }
-  .chip {
-    position: absolute; left: 64px; bottom: 48px;
-    font-family: "Geist Mono", ui-monospace, monospace;
-    font-size: 20px; font-weight: 500;
-    background: #fff; color: #000;
-    border-radius: 999px; padding: 14px 22px;
-  }
-  .meta {
-    position: absolute; right: 64px; bottom: 62px;
-    color: #666; font-family: "Geist Mono", ui-monospace, monospace; font-size: 16px;
-  }
+  html, body { width: 1200px; height: 630px; margin: 0; overflow: hidden; background: #080908; }
+  body { color: #f4f3ee; font-family: "Geist", ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .frame { position: relative; width: 1200px; height: 630px; padding: 50px 58px; background: #080908; }
+  .rule { position: absolute; top: 102px; right: 58px; left: 58px; height: 1px; background: rgba(244,243,238,.10); }
+  .brand { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 580; letter-spacing: -.03em; }
+  .mark { position: relative; width: 28px; height: 28px; border: 1px solid rgba(244,243,238,.18); border-radius: 7px; }
+  .mark:before, .mark:after { position: absolute; left: 7px; width: 12px; height: 3px; border-radius: 2px; background: #f4f3ee; content: ""; }
+  .mark:before { top: 8px; }
+  .mark:after { top: 16px; background: #9de8bf; }
+  .copy { position: absolute; top: 174px; left: 58px; }
+  .eyebrow { margin: 0 0 22px; color: #91908a; font: 500 16px "Geist Mono", monospace; letter-spacing: .09em; text-transform: uppercase; }
+  .eyebrow:before { display: inline-block; width: 8px; height: 8px; margin-right: 12px; border-radius: 50%; background: #9de8bf; content: ""; }
+  h1 { max-width: 800px; margin: 0; font-size: 78px; font-weight: 560; letter-spacing: -.055em; line-height: .98; }
+  .command { position: absolute; right: 58px; bottom: 50px; left: 58px; display: flex; height: 70px; align-items: center; gap: 16px; border: 1px solid rgba(244,243,238,.12); border-radius: 10px; background: #0d0e0d; padding: 0 20px; font: 500 20px "Geist Mono", monospace; }
+  .prompt { color: #9de8bf; }
+  .status { margin-left: auto; border: 1px solid rgba(157,232,191,.25); border-radius: 6px; padding: 8px 12px; color: #9de8bf; font-size: 16px; }
 </style>
 </head>
 <body>
-  <div class="frame">
-    <div class="top"><div class="dot">P</div> preflight</div>
-    <div class="copy">
-      <h1>Ship what you<br/>meant to ship.</h1>
-      <div class="sub">Explain the change · find blockers · return a verdict</div>
-    </div>
-    <div class="chip">npm i -g @khosla/preflight</div>
-    <div class="meta">local-first ship gate</div>
+<div class="frame">
+  <div class="brand"><span class="mark"></span><span>preflight</span></div>
+  <div class="rule"></div>
+  <div class="copy">
+    <p class="eyebrow">Local ship gate for coding agents</p>
+    <h1>One last check<br/>before you ship.</h1>
   </div>
+  <div class="command"><span class="prompt">›</span><span>npx @khosla/preflight</span><span class="status">no account needed</span></div>
+</div>
 </body>
 </html>

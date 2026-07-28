@@ -1,345 +1,575 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scheme-only-dark">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>preflight — ship gate for coding agents</title>
-<meta name="description" content="After your coding agent finishes, run preflight. Local ship gate: explain the change, find blockers, get a verdict."/>
+<title>preflight — local ship gate for coding agents</title>
+<meta name="description" content="Run one local check after your coding agent finishes. Preflight explains the change, finds blockers, and returns an executable verdict."/>
 <meta property="og:title" content="preflight"/>
-<meta property="og:description" content="Ship what you meant to ship."/>
+<meta property="og:description" content="One last check before you ship."/>
 <meta property="og:image" content="https://raw.githubusercontent.com/gvkhosla/preflight/main/docs/og.png"/>
 <meta property="og:type" content="website"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="theme-color" content="#000000"/>
+<meta name="theme-color" content="#080908"/>
 <link rel="icon" href="og.svg"/>
 <link rel="stylesheet" href="site.css"/>
 <style>
+  .site-header {
+    position: relative;
+    z-index: 20;
+    border-bottom: 1px solid var(--line);
+  }
   .nav {
-    display: flex; align-items: center; gap: 12px;
-    max-width: 1120px; margin: 0 auto;
-    padding: 14px var(--pad);
-    padding-top: max(14px, env(safe-area-inset-top));
+    display: flex;
+    min-height: 62px;
+    max-width: var(--page);
+    align-items: center;
+    margin: 0 auto;
+    padding: 0 var(--pad);
   }
-  .mark {
-    display: flex; align-items: center; gap: 8px;
-    font-weight: 600; letter-spacing: -0.02em; min-width: 0;
+  .nav-home { flex: 1; min-width: 0; }
+  .nav-descriptor {
+    margin-left: 5px;
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 400;
+    letter-spacing: 0;
   }
-  .mark .dot {
-    width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto;
-    background: #fff; color: #000;
-    display: grid; place-items: center;
-    font-size: 11px; font-weight: 700;
-  }
-  .mark .name { white-space: nowrap; }
-  .mark .by { color: var(--muted); font-size: 13px; font-weight: 400; white-space: nowrap; }
-  .nav .spacer { flex: 1; }
-  .nav-links { display: flex; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
-  .nav a.link { color: var(--muted); font-size: 13px; font-weight: 500; }
-  .nav a.link:hover { color: var(--text); }
-
-  main { max-width: 1120px; margin: 0 auto; padding: 28px var(--pad) 80px; }
-
-  .hero { max-width: 760px; padding: 18px 0 8px; }
-  .kicker {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-family: var(--mono); font-size: 11px; color: var(--muted);
-    border: 1px solid var(--line); border-radius: 999px;
-    padding: 6px 10px; margin-bottom: 18px;
-  }
-  .kicker i {
-    width: 6px; height: 6px; border-radius: 99px; background: var(--good);
-    display: inline-block; flex: 0 0 auto;
-  }
-  h1 {
-    margin: 0 0 14px;
-    font-size: clamp(34px, 9vw, 68px);
-    line-height: 1.02;
-    letter-spacing: -0.045em;
-    font-weight: 600;
-  }
-  .lede {
-    margin: 0 0 22px;
-    max-width: 34em;
-    font-size: clamp(15px, 3.8vw, 18px);
-    line-height: 1.5;
+  .desktop-nav { display: flex; align-items: center; gap: 22px; }
+  .desktop-nav a {
     color: var(--muted);
-    letter-spacing: -0.01em;
+    font-size: 0.8rem;
+    font-weight: 450;
   }
-  .actions {
-    display: grid;
-    gap: 10px;
-  }
-  .install-box {
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: #0b0b0b;
-    overflow: hidden;
-  }
-  .install-box .bar {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    padding: 10px 12px; border-bottom: 1px solid var(--line);
-    color: var(--muted); font-size: 12px; font-family: var(--mono);
-  }
-  .install-box pre {
-    margin: 0; padding: 14px;
-    font-family: var(--mono); font-size: 13px; line-height: 1.65;
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
-    white-space: pre;
-  }
-  .copy-btn {
-    border: 1px solid var(--line-strong);
+  .desktop-nav a:hover { color: var(--ink); }
+  .mobile-toggle {
+    position: relative;
+    display: none;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
     background: transparent;
-    color: var(--text);
-    border-radius: 999px;
-    padding: 4px 10px;
-    font: 600 11px var(--font);
     cursor: pointer;
   }
-  .meta {
-    margin-top: 12px; color: var(--faint);
-    font-family: var(--mono); font-size: 12px;
-    word-break: break-word;
+  .mobile-toggle span,
+  .mobile-toggle::before {
+    position: absolute;
+    width: 16px;
+    height: 1px;
+    background: var(--ink);
+    content: "";
   }
+  .mobile-toggle span { transform: translateY(-3px); }
+  .mobile-toggle::before { transform: translateY(3px); }
+  .mobile-menu {
+    display: none;
+    border-top: 1px solid var(--line);
+    padding: 10px var(--pad) 14px;
+  }
+  .mobile-menu a {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+  .mobile-menu a:last-child { border-bottom: 0; }
+  .mobile-menu[data-open="true"] { display: block; }
 
-  .panel {
-    margin-top: 36px;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: linear-gradient(180deg, #0d0d0d, #090909);
-    overflow: hidden;
+  main { isolation: isolate; }
+  .hero-wrap {
+    border-bottom: 1px solid var(--line);
+    padding: clamp(64px, 10vw, 124px) 0 clamp(54px, 8vw, 96px);
   }
-  .panel-top {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 14px; border-bottom: 1px solid var(--line);
-    min-width: 0;
-  }
-  .traffic { display: flex; gap: 6px; flex: 0 0 auto; }
-  .traffic span { width: 10px; height: 10px; border-radius: 99px; background: #2a2a2a; }
-  .panel-top .path {
-    font-family: var(--mono); font-size: 12px; color: var(--muted);
-    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .panel-top .stats {
-    margin-left: auto; font-family: var(--mono); font-size: 12px; flex: 0 0 auto;
-  }
-  .stats .d { color: var(--bad); margin-right: 8px; }
-  .stats .a { color: var(--good); }
-  .diff-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .diff {
-    font-family: var(--mono); font-size: 12px; line-height: 1.55;
-    padding: 4px 0 10px; min-width: min-content;
-  }
-  .row { display: grid; grid-template-columns: 40px 1fr; }
-  .ln { color: #444; text-align: right; padding: 0 8px; user-select: none; }
-  .code { padding: 0 14px 0 6px; white-space: pre; }
-  .row.del { background: rgba(242,85,90,.08); }
-  .row.del .code { color: #f5a8aa; }
-  .row.add { background: rgba(62,207,142,.08); }
-  .row.add .code { color: #9aefc4; }
-  .row.ctx .code { color: #bdbdbd; }
-
-  section.block { margin-top: 56px; }
-  section.block h2 {
-    margin: 0 0 8px;
-    font-size: clamp(22px, 5vw, 28px);
-    letter-spacing: -0.03em;
-    font-weight: 600;
-  }
-  section.block p.sub {
-    margin: 0 0 18px; color: var(--muted); max-width: 34em;
-  }
-  .grid {
-    display: grid; gap: 10px;
-    grid-template-columns: 1fr;
-  }
-  .grid .card h3 {
-    margin: 0 0 6px; font-size: 15px; letter-spacing: -0.02em; font-weight: 600;
-  }
-  .grid .card p { margin: 0; color: var(--muted); font-size: 13.5px; }
-
-  .steps { display: grid; gap: 10px; }
-  .step {
+  .hero {
     display: grid;
-    grid-template-columns: 28px 1fr;
-    gap: 12px;
-    align-items: start;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 14px;
-    background: var(--bg-elev);
+    max-width: var(--page);
+    margin: 0 auto;
+    padding: 0 var(--pad);
+    gap: clamp(42px, 7vw, 90px);
   }
-  .step .n {
-    width: 28px; height: 28px; border-radius: 999px;
-    display: grid; place-items: center;
-    background: #fff; color: #000;
-    font-size: 13px; font-weight: 700;
+  .hero > * { min-width: 0; }
+  .hero-copy { align-self: center; }
+  .hero h1 {
+    max-width: 13ch;
+    margin: 20px 0 0;
+    color: var(--ink);
+    font-size: clamp(2.75rem, 7vw, 5.25rem);
+    font-weight: 560;
+    letter-spacing: -0.057em;
+    line-height: 0.98;
+    text-wrap: balance;
   }
-  .step h3 { margin: 2px 0 4px; font-size: 15px; }
-  .step p { margin: 0; color: var(--muted); font-size: 13.5px; }
-  .step code {
-    display: inline-block;
-    margin-top: 8px;
-    word-break: break-all;
+  .lede {
+    max-width: 48ch;
+    margin: 24px 0 0;
+    color: var(--muted);
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 28px;
+  }
+  .command-panel {
+    align-self: center;
+    background: var(--surface-recessed);
+  }
+  .command-panel .instrument-bar { justify-content: space-between; }
+  .command-panel-body { padding: 6px 0; }
+  .command-row {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    min-height: 58px;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+  }
+  .command-prompt { color: var(--signal); font-family: var(--mono); }
+  .command-text {
+    min-width: 0;
+    overflow-x: auto;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+  .copy-command {
+    position: relative;
+    min-width: 58px;
+    min-height: 32px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: rgba(244, 243, 238, 0.04);
+    color: var(--ink-soft);
+    font-size: 0.72rem;
+    font-weight: 520;
+    cursor: pointer;
+  }
+  .copy-command:hover { background: rgba(244, 243, 238, 0.08); }
+  .command-output {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px;
+    border-top: 1px solid var(--line);
+    padding: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+  }
+  .command-check { color: var(--signal); }
+
+  .section {
+    max-width: var(--page);
+    margin: 0 auto;
+    padding: clamp(64px, 9vw, 104px) var(--pad);
+  }
+  .section + .section { border-top: 1px solid var(--line); }
+  .section-heading h2 {
+    max-width: 18ch;
+    margin: 14px 0 0;
+    color: var(--ink);
+    font-size: clamp(1.9rem, 4vw, 3rem);
+    font-weight: 560;
+    letter-spacing: -0.042em;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+  .section-heading p:last-child {
+    max-width: 48ch;
+    margin: 16px 0 0;
+    color: var(--muted);
+    text-wrap: pretty;
   }
 
-  footer.site {
-    max-width: 1120px; margin: 0 auto;
-    padding: 20px var(--pad) 40px;
-    padding-bottom: max(40px, env(safe-area-inset-bottom));
-    display: flex; gap: 12px; flex-wrap: wrap;
-    color: var(--faint); font-size: 13px;
+  .report-preview { margin-top: 34px; }
+  .report-topline {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
   }
-  footer.site a { color: var(--muted); }
+  .preview-branch {
+    overflow: hidden;
+    color: var(--dim);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .preview-status { margin-left: auto; flex: 0 0 auto; }
+  .report-layout { display: grid; }
+  .report-layout > * { min-width: 0; }
+  .report-summary {
+    border-bottom: 1px solid var(--line);
+    padding: 20px;
+  }
+  .summary-label {
+    margin: 0 0 10px;
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .summary-text {
+    max-width: 44ch;
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+  .summary-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .metric { padding: 14px 12px 0 0; }
+  .metric + .metric { border-left: 1px solid var(--line); padding-left: 12px; }
+  .metric dt {
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .metric dd {
+    margin: 4px 0 0;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .preview-finding { padding: clamp(20px, 4vw, 30px); }
+  .finding-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .preview-finding h3 {
+    max-width: 26ch;
+    margin: 16px 0 0;
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    font-weight: 560;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .finding-location {
+    margin: 10px 0 0;
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+  }
+  .finding-why {
+    max-width: 56ch;
+    margin: 18px 0;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+  }
+  .finding-fix {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    margin: 0 0 20px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .finding-fix strong {
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 
-  @media (min-width: 720px) {
-    .actions { grid-template-columns: auto auto; justify-content: start; }
-    .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .mark .by { display: inline; }
-    main { padding-top: 40px; }
+  .flow {
+    display: grid;
+    margin-top: 34px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
   }
-  @media (max-width: 719px) {
-    .mark .by { display: none; }
-    .nav-links { gap: 12px; }
-    .actions .btn { width: 100%; }
+  .flow > div { padding: 20px 0; }
+  .flow > div + div { border-top: 1px solid var(--line); }
+  .flow dt {
+    color: var(--signal);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+  }
+  .flow dd { margin: 10px 0 0; }
+  .flow h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 560;
+    letter-spacing: -0.02em;
+  }
+  .flow p { max-width: 34ch; margin: 6px 0 0; color: var(--muted); font-size: 0.9rem; }
+
+  .setup-grid {
+    display: grid;
+    gap: 32px;
+    margin-top: 34px;
+  }
+  .setup-grid > * { min-width: 0; }
+  .setup-list { border-top: 1px solid var(--line); }
+  .setup-row {
+    display: grid;
+    grid-template-columns: minmax(90px, 1fr) 2fr;
+    gap: 18px;
+    border-bottom: 1px solid var(--line);
+    padding: 14px 0;
+  }
+  .setup-row dt { color: var(--ink); font-family: var(--mono); font-size: 0.78rem; }
+  .setup-row dd { margin: 0; color: var(--muted); font-size: 0.88rem; }
+  .final-command { background: var(--surface-recessed); }
+  .final-command pre {
+    margin: 0;
+    overflow-x: auto;
+    padding: 18px;
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    line-height: 1.8;
+  }
+  .final-command .signal { color: var(--signal); }
+
+  .site-footer { border-top: 1px solid var(--line); }
+  .footer-inner {
+    display: flex;
+    max-width: var(--page);
+    align-items: center;
+    gap: 18px;
+    margin: 0 auto;
+    padding: 26px var(--pad) max(26px, env(safe-area-inset-bottom));
+  }
+  .footer-inner .wordmark { font-size: 0.88rem; }
+  .footer-links { display: flex; flex-wrap: wrap; gap: 18px; margin-left: auto; }
+  .footer-links a { color: var(--muted); font-size: 0.78rem; font-weight: 400; }
+  .footer-links a:hover { color: var(--ink); }
+
+  @media (min-width: 760px) {
+    .hero { grid-template-columns: minmax(0, 7fr) minmax(300px, 5fr); }
+    .report-layout { grid-template-columns: minmax(220px, 3fr) minmax(0, 7fr); }
+    .report-summary { border-right: 1px solid var(--line); border-bottom: 0; }
+    .flow { grid-template-columns: repeat(3, 1fr); }
+    .flow > div { padding: 24px 24px 24px 0; }
+    .flow > div + div { border-top: 0; border-left: 1px solid var(--line); padding-left: 24px; }
+    .setup-grid { grid-template-columns: minmax(0, 6fr) minmax(300px, 4fr); align-items: start; }
+  }
+  @media (max-width: 759px) {
+    .desktop-nav { display: none; }
+    .command-panel .instrument-bar .status { display: none; }
+    .mobile-toggle { display: flex; }
+    .nav-descriptor { display: none; }
+    .hero-actions { display: grid; }
+    .hero-actions .button { width: 100%; }
+    .footer-inner { align-items: flex-start; flex-direction: column; }
+    .footer-links { margin-left: 0; }
   }
 </style>
 </head>
 <body>
-  <nav class="nav">
-    <div class="mark">
-      <span class="dot">P</span>
-      <span class="name">preflight</span>
-      <span class="by">for coding agents</span>
+<header class="site-header">
+  <nav class="nav" aria-label="Primary navigation">
+    <a class="wordmark nav-home" href="./" aria-label="Preflight homepage">
+      <span class="wordmark-mark" aria-hidden="true"></span>
+      <span>preflight</span>
+      <span class="nav-descriptor">/ local ship gate</span>
+    </a>
+    <div class="desktop-nav">
+      <a href="#product">Product</a>
+      <a href="#setup">Setup</a>
+      <a href="https://github.com/gvkhosla/preflight">GitHub</a>
+      <a href="https://www.npmjs.com/package/@khosla/preflight">npm</a>
     </div>
-    <div class="spacer"></div>
-    <div class="nav-links">
-      <a class="link" href="demo-ui.html">UI</a>
-      <a class="link" href="https://github.com/gvkhosla/preflight">GitHub</a>
-      <a class="link" href="https://www.npmjs.com/package/@khosla/preflight">npm</a>
-    </div>
+    <button class="mobile-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="mobile-menu">
+      <span aria-hidden="true"></span>
+    </button>
   </nav>
-
-  <main>
-    <section class="hero">
-      <div class="kicker"><i></i> value in seconds · local · CLI-first</div>
-      <h1>Ship what you<br/>meant to ship.</h1>
-      <p class="lede">
-        After your coding agent finishes, run one command.
-        Get a clear verdict: approve or fix these findings.
-      </p>
-
-      <div class="install-box" id="install">
-        <div class="bar">
-          <span>fastest start</span>
-          <button class="copy-btn" type="button" data-copy="npx @khosla/preflight">Copy</button>
-        </div>
-        <pre id="cmd">npx @khosla/preflight</pre>
-      </div>
-      <p class="meta">Uses pi / claude / codex / amp / opencode if installed. No preflight account.</p>
-
-      <div class="actions" style="margin-top:14px">
-        <a class="btn primary" href="#steps">Get value in 3 steps</a>
-        <a class="btn ghost" href="demo-ui.html">See the review UI</a>
-      </div>
-    </section>
-
-    <div class="panel" aria-hidden="true">
-      <div class="panel-top">
-        <div class="traffic"><span></span><span></span><span></span></div>
-        <div class="path">src/greet.ts</div>
-        <div class="stats"><span class="d">−1</span><span class="a">+2</span></div>
-      </div>
-      <div class="diff-scroll">
-        <div class="diff">
-          <div class="row ctx"><div class="ln">1</div><div class="code">export function greet(name: string) {</div></div>
-          <div class="row del"><div class="ln">2</div><div class="code">-  return "Hello, " + name;</div></div>
-          <div class="row add"><div class="ln">2</div><div class="code">+  if (!name.trim()) throw new Error("blank name");</div></div>
-          <div class="row add"><div class="ln">3</div><div class="code">+  return `Hello, ${name}`;</div></div>
-          <div class="row ctx"><div class="ln">4</div><div class="code">}</div></div>
-        </div>
-      </div>
-    </div>
-
-    <section class="block" id="steps">
-      <h2>Three steps.</h2>
-      <p class="sub">If you already use a coding agent CLI, you’re basically done.</p>
-      <div class="steps">
-        <div class="step">
-          <div class="n">1</div>
-          <div>
-            <h3>Run it on a dirty repo</h3>
-            <p>From any project with uncommitted changes:</p>
-            <code>npx @khosla/preflight</code>
-          </div>
-        </div>
-        <div class="step">
-          <div class="n">2</div>
-          <div>
-            <h3>Read the verdict</h3>
-            <p>Browser opens with what changed + findings. Or use agent mode:</p>
-            <code>npx @khosla/preflight --json --auto</code>
-          </div>
-        </div>
-        <div class="step">
-          <div class="n">3</div>
-          <div>
-            <h3>Fix and re-run</h3>
-            <p>Exit 0 = approved. Exit 2 = fix findings, then run again (delta re-review is automatic).</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="block">
-      <h2>What you get.</h2>
-      <p class="sub">Not another noisy bot. A calm local gate between agent output and ship.</p>
-      <div class="grid">
-        <div class="card">
-          <h3>Explain</h3>
-          <p>Short story of the change, not a raw file dump.</p>
-        </div>
-        <div class="card">
-          <h3>Judge</h3>
-          <p>Blockers and should-fix items with agreement when multiple CLIs exist.</p>
-        </div>
-        <div class="card">
-          <h3>Act</h3>
-          <p>Executable findings for agents. Approve or request changes for humans.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="block">
-      <h2>Optional install</h2>
-      <p class="sub">npx is enough. Global install if you want the short command.</p>
-      <div class="install-box">
-        <div class="bar"><span>global</span></div>
-        <pre>npm i -g @khosla/preflight
-preflight doctor
-preflight</pre>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site">
-    <span>preflight</span>
+  <nav class="mobile-menu" id="mobile-menu" data-open="false" aria-label="Mobile navigation">
+    <a href="#product">Product</a>
+    <a href="#setup">Setup</a>
     <a href="https://github.com/gvkhosla/preflight">GitHub</a>
     <a href="https://www.npmjs.com/package/@khosla/preflight">npm</a>
-    <a href="demo-ui.html">UI mock</a>
-  </footer>
+  </nav>
+</header>
 
-  <script>
-    const btn = document.querySelector('.copy-btn');
-    const cmd = document.getElementById('cmd')?.textContent?.trim() || 'npx @khosla/preflight';
-    btn?.addEventListener('click', async () => {
+<main>
+  <section class="hero-wrap">
+    <div class="hero">
+      <div class="hero-copy reveal">
+        <p class="eyebrow">Local ship gate for coding agents</p>
+        <h1>One last check before you ship.</h1>
+        <p class="lede">Preflight reads the change, finds grounded blockers, and returns a verdict your agent can act on. It runs locally and uses the coding CLI you already have.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#setup">Run preflight</a>
+          <a class="button button-secondary" href="demo-ui.html">Open the review UI</a>
+        </div>
+      </div>
+
+      <div class="instrument command-panel reveal reveal-delay" aria-label="Quick start command">
+        <div class="instrument-bar">
+          <span>terminal</span>
+          <span class="status status-ready">no account needed</span>
+        </div>
+        <div class="command-panel-body">
+          <div class="command-row">
+            <span class="command-prompt" aria-hidden="true">›</span>
+            <span class="command-text">npx @khosla/preflight</span>
+            <button class="copy-command" type="button" data-copy="npx @khosla/preflight">Copy</button>
+          </div>
+          <div class="command-output">
+            <span class="command-check" aria-hidden="true">✓</span>
+            <span>pi detected · reviewing git diff</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="product">
+    <div class="section-heading">
+      <p class="eyebrow">The product</p>
+      <h2>A verdict, not another wall of output.</h2>
+      <p>Preflight collapses multiple model opinions, code context, and local verification into one calm decision surface.</p>
+    </div>
+
+    <div class="instrument report-preview">
+      <div class="instrument-bar report-topline">
+        <span class="wordmark"><span class="wordmark-mark" aria-hidden="true"></span><span>preflight</span></span>
+        <span class="preview-branch">feat/reject-blank-names</span>
+        <span class="status status-blocked preview-status">changes requested</span>
+      </div>
+      <div class="report-layout">
+        <aside class="report-summary">
+          <p class="summary-label">What changed</p>
+          <p class="summary-text"><code>greet()</code> now rejects whitespace-only names instead of returning a hollow greeting.</p>
+          <dl class="summary-metrics">
+            <div class="metric"><dt>Judges</dt><dd>2</dd></div>
+            <div class="metric"><dt>Open</dt><dd>1</dd></div>
+            <div class="metric"><dt>Verify</dt><dd>pass</dd></div>
+          </dl>
+        </aside>
+
+        <article class="preview-finding">
+          <div class="finding-meta">
+            <span class="tag tag-strong">should-fix</span>
+            <span class="tag">2/2 agree</span>
+            <span class="tag tag-good">high confidence</span>
+          </div>
+          <h3>No test covers the new error path.</h3>
+          <p class="finding-location">src/greet.ts:2 · F1</p>
+          <p class="finding-why">The new throw path changes public behavior, but no test protects blank and whitespace-only names.</p>
+          <p class="finding-fix"><strong>Fix</strong><span>Add one focused unit test before shipping.</span></p>
+
+          <div class="instrument">
+            <div class="instrument-bar">
+              <span class="instrument-title">src/greet.ts</span>
+              <span class="instrument-meta"><span class="stat-delete">−1</span>&nbsp; <span class="stat-add">+2</span></span>
+            </div>
+            <div class="diff-scroll">
+              <div class="diff-code">
+                <div class="diff-row diff-row-context"><span class="diff-number">1</span><span class="diff-line">export function greet(name: string) {</span></div>
+                <div class="diff-row diff-row-delete"><span class="diff-number">2</span><span class="diff-line">-  return "Hello, " + name;</span></div>
+                <div class="diff-row diff-row-add"><span class="diff-number">2</span><span class="diff-line">+  if (!name.trim()) throw new Error("blank name");</span></div>
+                <div class="diff-row diff-row-add"><span class="diff-number">3</span><span class="diff-line">+  return `Hello, ${name}`;</span></div>
+                <div class="diff-row diff-row-context"><span class="diff-number">4</span><span class="diff-line">}</span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <p class="eyebrow">The loop</p>
+      <h2>From diff to decision in three passes.</h2>
+      <p>Each stage removes noise and adds evidence, so the final result is short enough for a human and structured enough for an agent.</p>
+    </div>
+    <dl class="flow">
+      <div>
+        <dt>01 / Understand</dt>
+        <dd><h3>Read the real change.</h3><p>Intent, symbols, related tests, and changed code are packed locally.</p></dd>
+      </div>
+      <div>
+        <dt>02 / Judge</dt>
+        <dd><h3>Ground every finding.</h3><p>Multiple CLIs agree behind one verdict, with confidence and exact hunks.</p></dd>
+      </div>
+      <div>
+        <dt>03 / Act</dt>
+        <dd><h3>Return a clear gate.</h3><p>Exit 0 means ship. Exit 2 includes fixable findings and delta re-review.</p></dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="section" id="setup">
+    <div class="section-heading">
+      <p class="eyebrow">Setup</p>
+      <h2>Use the harness already on your machine.</h2>
+      <p>There is no preflight account or hosted control plane. Agent CLIs come first; direct APIs are optional.</p>
+    </div>
+    <div class="setup-grid">
+      <dl class="setup-list">
+        <div class="setup-row"><dt>pi</dt><dd>Default when installed.</dd></div>
+        <div class="setup-row"><dt>claude</dt><dd>Uses your Claude Code session.</dd></div>
+        <div class="setup-row"><dt>codex</dt><dd>Uses your Codex CLI session.</dd></div>
+        <div class="setup-row"><dt>amp</dt><dd>Runs through Amp execute mode.</dd></div>
+        <div class="setup-row"><dt>opencode</dt><dd>Uses the OpenCode run command.</dd></div>
+        <div class="setup-row"><dt>anthropic</dt><dd>Optional API power-up.</dd></div>
+      </dl>
+      <div class="instrument final-command">
+        <div class="instrument-bar"><span>start here</span><span class="status status-ready">v0.1.7</span></div>
+        <pre><span class="signal">›</span> npx @khosla/preflight
+<span class="signal">›</span> npx @khosla/preflight doctor
+
+# agent / CI mode
+<span class="signal">›</span> npx @khosla/preflight --json --auto</pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <a class="wordmark" href="./" aria-label="Preflight homepage"><span class="wordmark-mark" aria-hidden="true"></span><span>preflight</span></a>
+    <nav class="footer-links" aria-label="Footer navigation">
+      <a href="https://github.com/gvkhosla/preflight">GitHub</a>
+      <a href="https://www.npmjs.com/package/@khosla/preflight">npm</a>
+      <a href="demo-ui.html">Review UI</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  const toggle = document.querySelector('.mobile-toggle');
+  const menu = document.querySelector('.mobile-menu');
+  toggle?.addEventListener('click', () => {
+    const open = menu?.dataset.open !== 'true';
+    if (menu) menu.dataset.open = String(open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+  });
+  menu?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
+    menu.dataset.open = 'false';
+    toggle?.setAttribute('aria-expanded', 'false');
+  }));
+  document.querySelectorAll('[data-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const command = button.getAttribute('data-copy') || '';
       try {
-        await navigator.clipboard.writeText(cmd);
-        btn.textContent = 'Copied';
-        setTimeout(() => { btn.textContent = 'Copy'; }, 1200);
+        await navigator.clipboard.writeText(command);
+        button.textContent = 'Copied';
+        setTimeout(() => { button.textContent = 'Copy'; }, 1300);
       } catch {
-        btn.textContent = 'Select & copy';
+        button.textContent = 'Select';
       }
     });
-  </script>
+  });
+</script>
 </body>
 </html>
