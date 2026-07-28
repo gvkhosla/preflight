@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- Website + OG image redesigned closer to diffs.com
+- Geist + Geist Mono (same family as Diffs.com; Berkeley Mono is proprietary)
+- Self-hosted font files on GitHub Pages
+
 ## 0.1.3
 
 - Review UI redesigned: Inter + IBM Plex Mono, Diffs.com-inspired minimal dark chrome

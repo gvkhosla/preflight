@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>og</title>
+<link rel="stylesheet" href="fonts.css"/>
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #000; }
+  body {
+    font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+    color: #ededed; -webkit-font-smoothing: antialiased;
+  }
+  .frame {
+    width: 1200px; height: 630px;
+    padding: 52px 64px 48px;
+    background:
+      radial-gradient(900px 420px at 85% 0%, rgba(255,255,255,.05), transparent 50%),
+      #000;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 28px;
+  }
+  .top { display: flex; align-items: center; gap: 12px; color: #8a8a8a; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+  .dot {
+    width: 30px; height: 30px; border-radius: 8px; background: #fff; color: #000;
+    display: grid; place-items: center; font-weight: 700; font-size: 15px;
+  }
+  .mid { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  h1 {
+    margin: 0; font-size: 84px; line-height: 0.98; letter-spacing: -0.05em; font-weight: 600;
+  }
+  .sub {
+    margin-top: 22px; color: #888; font-size: 26px; letter-spacing: -0.02em; max-width: 920px;
+  }
+  .bottom { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  .chip {
+    font-family: "Geist Mono", ui-monospace, monospace;
+    font-size: 22px; font-weight: 500;
+    background: #fff; color: #000;
+    border-radius: 999px; padding: 16px 24px;
+  }
+  .meta {
+    color: #666; font-family: "Geist Mono", ui-monospace, monospace; font-size: 18px;
+  }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="top"><div class="dot">P</div> preflight</div>
+    <div class="mid">
+      <h1>Ship what you<br/>meant to ship.</h1>
+      <div class="sub">Multi-judge findings · @pierre/diffs · executable verdicts</div>
+    </div>
+    <div class="bottom">
+      <div class="chip">npm i -g @khosla/preflight</div>
+      <div class="meta">local-first ship gate</div>
+    </div>
+  </div>
+</body>
+</html>

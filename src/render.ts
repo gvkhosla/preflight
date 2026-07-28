@@ -164,30 +164,37 @@ export async function renderReport(result: PipelineResult, files: DiffFile[], re
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(analysis.title)} — preflight</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  @font-face {
+    font-family: "Geist";
+    src: url("https://cdn.jsdelivr.net/npm/geist@1.7.2/dist/fonts/geist-sans/Geist-Variable.woff2") format("woff2");
+    font-weight: 100 900; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: "Geist Mono";
+    src: url("https://cdn.jsdelivr.net/npm/geist@1.7.2/dist/fonts/geist-mono/GeistMono-Variable.woff2") format("woff2");
+    font-weight: 100 900; font-style: normal; font-display: swap;
+  }
   :root {
     color-scheme: dark;
-    --bg: #050505;
-    --bg-elev: #0c0c0c;
+    --bg: #000000;
+    --bg-elev: #0a0a0a;
     --bg-card: #111111;
-    --border: #1e1e1e;
-    --border-strong: #2a2a2a;
+    --border: #222222;
+    --border-strong: #2e2e2e;
     --fg: #ededed;
-    --muted: #8a8a8a;
-    --faint: #5c5c5c;
+    --muted: #888888;
+    --faint: #666666;
     --accent: #ededed;
-    --accent-soft: #1a1a1a;
-    --good: #3dd68c;
+    --accent-soft: #161616;
+    --good: #3ecf8e;
     --bad: #f2555a;
     --warn: #f5a524;
     --blocker: #f2555a;
     --should: #f5a524;
     --nit: #6b6b6b;
-    --font: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     --radius: 12px;
   }
   @media (prefers-color-scheme: light) {
