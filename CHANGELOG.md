@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Doctor treats missing agent CLIs and API backends as optional, not failures.
+- Status is still NOT READY only when nothing can judge a diff.
+- Version bump for the npm package and `preflight --version`.
+
 ## 0.2.0
 
 - Evidence Gate v1: repository-native typecheck, lint, test, and build discovery

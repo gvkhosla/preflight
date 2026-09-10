@@ -41,7 +41,7 @@ export async function runDoctor(): Promise<number> {
       anyCli = true;
       ok(name);
     } else {
-      bad(name, "not on PATH");
+      info(name, "not on PATH");
     }
   }
 
@@ -52,7 +52,7 @@ export async function runDoctor(): Promise<number> {
     if (b.kind !== "api") continue;
     const avail = await b.available();
     if (avail) ok(name);
-    else bad(name, "not configured");
+    else info(name, "not configured");
   }
   if (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) {
     ok("ANTHROPIC_API_KEY/AUTH_TOKEN set");
