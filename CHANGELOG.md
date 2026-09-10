@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- `preflight doctor --json` includes `ok` so agents can branch without parsing `status`.
+
 ## 0.2.2
 
 - `preflight doctor --json` prints the same readiness report as JSON for agents and CI.

@@ -16,6 +16,7 @@ export type DoctorReport = {
   defaultBackend: string | null;
   autoStrict: string | null;
   status: "ready" | "ready-api" | "degraded" | "not-ready";
+  ok: boolean;
 };
 
 export async function collectDoctorReport(): Promise<DoctorReport> {
@@ -66,6 +67,7 @@ export async function collectDoctorReport(): Promise<DoctorReport> {
           ? `${available[0].name}+${available[1].name}`
           : null,
     status,
+    ok: status !== "not-ready",
   };
 }
 
