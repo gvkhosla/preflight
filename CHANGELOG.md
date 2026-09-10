@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- `preflight doctor --json` prints the same readiness report as JSON for agents and CI.
+
 ## 0.2.1
 
 - Doctor treats missing agent CLIs and API backends as optional, not failures.

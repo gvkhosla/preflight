@@ -39,7 +39,7 @@ options:
   --no-verify            skip repository-native checks
   --no-delta             ignore previous .preflight/last-verdict.json
   --version              print version
-  doctor                 check git/backends/memory readiness
+  doctor [--json]        check git/backends/memory readiness
   -h, --help             show help
 
 examples:
@@ -63,7 +63,7 @@ async function getChange(gitArgs: string[]): Promise<{ diff: string; warnings: s
 async function main() {
   const argv = process.argv.slice(2);
   if (argv[0] === "doctor") {
-    process.exit(await runDoctor());
+    process.exit(await runDoctor(argv.includes("--json")));
   }
 
   const gitArgs: string[] = [];
